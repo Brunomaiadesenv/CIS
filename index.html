@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIGS — Sistema Inteligente de Gestão da Saúde</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#040e1c;--bg2:#071628;--panel:rgba(7,22,48,0.9);--pb:rgba(0,180,255,0.13);
+  --cyan:#00c8ff;--teal:#00ffb3;--red:#ff4060;--amber:#ffb830;--purple:#a56cff;--pink:#ff60b0;
+  --white:#dff0ff;--muted:#4a7090;
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--fb);background:var(--bg);color:var(--white);height:100vh;overflow:hidden;display:flex}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;filter:blur(130px);pointer-events:none;z-index:0}
+.o1{width:700px;height:700px;background:rgba(0,140,255,.06);top:-250px;left:-200px}
+.o2{width:450px;height:450px;background:rgba(0,255,179,.04);bottom:50px;right:-100px}
+.o3{width:350px;height:350px;background:rgba(165,108,255,.05);top:40%;left:35%}
+
+/* SIDEBAR */
+.sidebar{width:68px;background:rgba(4,14,28,.97);border-right:1px solid var(--pb);display:flex;flex-direction:column;align-items:center;padding:18px 0;gap:6px;flex-shrink:0;z-index:10}
+.s-logo{width:40px;height:40px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:13px;color:#fff;margin-bottom:18px;box-shadow:0 0 22px rgba(0,200,255,.35)}
+.s-nav{display:flex;flex-direction:column;gap:3px;flex:1;width:100%;padding:0 10px}
+.nb{width:48px;height:48px;border-radius:12px;border:none;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;position:relative;font-size:17px}
+.nb:hover{background:rgba(0,200,255,.09);color:var(--cyan)}
+.nb.act{background:rgba(0,200,255,.12);color:var(--cyan)}
+.nb.act::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:3px;height:22px;background:var(--cyan);border-radius:0 2px 2px 0}
+.nb .tip{position:absolute;left:56px;background:rgba(0,200,255,.95);color:#000;font-size:10px;font-family:var(--fm);padding:4px 9px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;font-weight:500;z-index:99}
+.nb:hover .tip{opacity:1}
+.s-sep{width:30px;height:1px;background:var(--pb);margin:8px 0}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;z-index:1}
+
+/* HEADER */
+.hdr{height:56px;border-bottom:1px solid var(--pb);display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(4,14,28,.8);backdrop-filter:blur(20px);flex-shrink:0}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.hdr-title{font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:.02em}
+.hdr-title span{color:var(--cyan)}
+.badge{font-family:var(--fm);font-size:9px;padding:3px 8px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.b-live{border:1px solid rgba(0,255,179,.3);color:var(--teal);background:rgba(0,255,179,.05)}
+.b-loc{border:1px solid rgba(255,76,64,.3);color:var(--red);background:rgba(255,76,64,.05)}
+.pdot{width:5px;height:5px;border-radius:50%;background:var(--teal);animation:pdot 2s infinite}
+@keyframes pdot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,179,.4)}50%{opacity:.7;box-shadow:0 0 0 4px rgba(0,255,179,0)}}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.clk{font-family:var(--fm);font-size:11px;color:var(--muted)}
+.clk strong{color:var(--cyan)}
+.abtn{width:34px;height:34px;border-radius:9px;border:1px solid var(--pb);background:var(--panel);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;position:relative}
+.abtn:hover{color:var(--amber);border-color:rgba(255,184,48,.3)}
+.abadge{position:absolute;top:-4px;right:-4px;width:15px;height:15px;background:var(--red);border-radius:50%;font-size:8px;font-family:var(--fm);display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-weight:700}
+.upill{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--pb);border-radius:20px;padding:3px 10px 3px 3px}
+.uav{width:26px;height:26px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.uname{font-size:11px;font-weight:500}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;overflow-x:hidden}
+.content::-webkit-scrollbar{width:3px}
+.content::-webkit-scrollbar-thumb{background:rgba(0,200,255,.15);border-radius:2px}
+
+/* VIEWS */
+.view{display:none;padding:18px 20px;flex-direction:column;gap:16px;min-height:100%}
+.view.active{display:flex}
+
+/* PANEL */
+.pnl{background:var(--panel);border:1px solid var(--pb);border-radius:15px;padding:18px;backdrop-filter:blur(12px)}
+.pnl-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pnl-title{font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:.03em}
+.ptag{font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(0,200,255,.07);color:var(--muted);border:1px solid rgba(0,200,255,.1)}
+
+/* SCENARIO BAR */
+.sc-bar{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--pb);border-radius:12px;padding:10px 14px}
+.sc-label{font-family:var(--fm);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-right:4px;white-space:nowrap}
+.sc-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--pb);background:transparent;color:var(--muted);font-family:var(--fm);font-size:10px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.sc-btn:hover{border-color:rgba(0,200,255,.3);color:var(--white)}
+.sc-btn.sc-act{background:rgba(0,200,255,.12);border-color:rgba(0,200,255,.4);color:var(--cyan)}
+.sc-btn.sc-red.sc-act{background:rgba(255,64,96,.12);border-color:rgba(255,64,96,.4);color:var(--red)}
+.sc-btn.sc-teal.sc-act{background:rgba(0,255,179,.1);border-color:rgba(0,255,179,.35);color:var(--teal)}
+.sc-btn.sc-amber.sc-act{background:rgba(255,184,48,.1);border-color:rgba(255,184,48,.35);color:var(--amber)}
+.sc-btn.sc-purple.sc-act{background:rgba(165,108,255,.1);border-color:rgba(165,108,255,.35);color:var(--purple)}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--pb);border-radius:13px;padding:14px;transition:all .3s;cursor:default;position:relative;overflow:hidden}
+.kpi:hover{transform:translateY(-2px);border-color:rgba(0,200,255,.28)}
+.kpi-bot{position:absolute;bottom:0;left:0;right:0;height:2px;opacity:0;transition:opacity .3s;border-radius:0 0 13px 13px}
+.kpi:hover .kpi-bot{opacity:1}
+.kpi-t{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.kico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ic-cyan{background:rgba(0,200,255,.1)}.ic-teal{background:rgba(0,255,179,.1)}.ic-amber{background:rgba(255,184,48,.1)}.ic-red{background:rgba(255,64,96,.1)}.ic-purple{background:rgba(165,108,255,.1)}
+.kdelta{font-family:var(--fm);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:500}
+.d-up{background:rgba(0,255,179,.1);color:var(--teal)}.d-dn{background:rgba(255,64,96,.1);color:var(--red)}.d-neu{background:rgba(74,112,144,.1);color:var(--muted)}
+.kval{font-family:var(--fd);font-size:24px;font-weight:800;line-height:1;margin-bottom:3px;transition:color .5s}
+.klbl{font-size:10px;color:var(--muted)}
+
+/* GRID */
+.g3{display:grid;grid-template-columns:1fr 1fr 340px;gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g2b{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+
+/* CHART */
+.chart-wrap{position:relative}
+.chart-h200{height:195px}
+.chart-h170{height:170px}
+.chart-h150{height:150px}
+
+/* OCC BARS */
+.occ-list{display:flex;flex-direction:column;gap:12px}
+.occ-i{}
+.occ-h{display:flex;justify-content:space-between;margin-bottom:5px}
+.occ-n{font-size:11px;font-weight:500}
+.occ-p{font-family:var(--fm);font-size:10px}
+.occ-track{height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.occ-fill{height:100%;border-radius:3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.f-crit{background:linear-gradient(90deg,rgba(255,64,96,.4),var(--red))}
+.f-high{background:linear-gradient(90deg,rgba(255,184,48,.4),var(--amber))}
+.f-norm{background:linear-gradient(90deg,rgba(0,200,255,.4),var(--cyan))}
+.f-low{background:linear-gradient(90deg,rgba(0,255,179,.4),var(--teal))}
+.occ-tag{font-family:var(--fm);font-size:8px;margin-top:3px;padding:2px 6px;border-radius:3px;display:inline-block}
+.t-crit{background:rgba(255,64,96,.1);color:var(--red)}.t-high{background:rgba(255,184,48,.1);color:var(--amber)}.t-norm{background:rgba(0,200,255,.1);color:var(--cyan)}.t-low{background:rgba(0,255,179,.1);color:var(--teal)}
+
+/* FEED */
+.feed{display:flex;flex-direction:column;gap:0;max-height:220px;overflow-y:auto}
+.feed::-webkit-scrollbar{width:2px}
+.feed::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1)}
+.fi{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid rgba(0,200,255,.05);animation:fin .3s ease}
+@keyframes fin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.fi:last-child{border-bottom:none}
+.fd{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.fd.rh{background:var(--cyan);box-shadow:0 0 5px var(--cyan)}
+.fd.sa{background:var(--teal);box-shadow:0 0 5px var(--teal)}
+.fd.pr{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+.fd.al{background:var(--red);box-shadow:0 0 5px var(--red)}
+.fc{flex:1}
+.fm2{font-size:11px;color:var(--white);line-height:1.4}
+.fmeta{font-family:var(--fm);font-size:9px;color:var(--muted);margin-top:1px}
+.fsrc{font-family:var(--fm);font-size:8px;padding:2px 5px;border-radius:3px;flex-shrink:0;margin-top:3px;align-self:flex-start}
+.fsrc.rh{background:rgba(0,200,255,.1);color:var(--cyan)}
+.fsrc.sa{background:rgba(0,255,179,.1);color:var(--teal)}
+.fsrc.pr{background:rgba(255,184,48,.1);color:var(--amber)}
+.fsrc.al{background:rgba(255,64,96,.1);color:var(--red)}
+
+/* AI BANNER */
+.ai-banner{border-radius:14px;padding:16px 20px;background:linear-gradient(135deg,rgba(0,200,255,.07),rgba(165,108,255,.07));border:1px solid rgba(0,200,255,.18);display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;transition:all .4s}
+.ai-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),transparent)}
+.ai-ico{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,rgba(0,200,255,.18),rgba(165,108,255,.18));border:1px solid rgba(0,200,255,.25);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;animation:aig 2.5s ease-in-out infinite alternate}
+@keyframes aig{from{box-shadow:0 0 10px rgba(0,200,255,.2)}to{box-shadow:0 0 25px rgba(0,200,255,.5)}}
+.ai-txt{flex:1}
+.ai-lbl{font-family:var(--fm);font-size:9px;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.ai-msg{font-size:13px;color:var(--white)}
+.ai-msg strong{color:var(--amber)}
+.ai-acts{display:flex;gap:7px;flex-shrink:0}
+.btn{padding:7px 15px;border-radius:7px;border:none;font-family:var(--fb);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+.btn-p{background:var(--cyan);color:#000}
+.btn-p:hover{background:#00deff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,200,255,.3)}
+.btn-g{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--pb)}
+.btn-g:hover{background:rgba(255,255,255,.09);color:var(--white)}
+.btn-sm{padding:5px 11px;font-size:10px;border-radius:6px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 8px 9px;text-align:left;border-bottom:1px solid var(--pb)}
+.tbl td{font-size:11px;padding:9px 8px;border-bottom:1px solid rgba(0,200,255,.04);vertical-align:middle;transition:background .15s}
+.tbl tr:hover td{background:rgba(0,200,255,.03)}
+.tbl tr:last-child td{border-bottom:none}
+.tav{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.tv-cy{background:rgba(0,200,255,.18);color:var(--cyan)}.tv-te{background:rgba(0,255,179,.18);color:var(--teal)}.tv-pu{background:rgba(165,108,255,.18);color:var(--purple)}.tv-am{background:rgba(255,184,48,.18);color:var(--amber)}.tv-re{background:rgba(255,64,96,.18);color:var(--red)}.tv-pi{background:rgba(255,96,176,.18);color:var(--pink)}
+.tname{display:flex;align-items:center;gap:7px}
+.sp{font-family:var(--fm);font-size:8px;padding:3px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.sp-act{background:rgba(0,255,179,.1);color:var(--teal);border:1px solid rgba(0,255,179,.2)}
+.sp-alrt{background:rgba(255,184,48,.1);color:var(--amber);border:1px solid rgba(255,184,48,.2)}
+.sp-off{background:rgba(74,112,144,.1);color:var(--muted);border:1px solid rgba(74,112,144,.2)}
+.sp-crit{background:rgba(255,64,96,.1);color:var(--red);border:1px solid rgba(255,64,96,.2)}
+.sp-info{background:rgba(165,108,255,.1);color:var(--purple);border:1px solid rgba(165,108,255,.2)}
+.sloc{font-size:10px;color:var(--muted)}
+
+/* MODAL */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s}
+.moverlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid rgba(0,200,255,.22);border-radius:18px;padding:26px;width:460px;max-width:90vw;transform:scale(.9) translateY(20px);transition:all .3s cubic-bezier(.4,0,.2,1)}
+.moverlay.open .modal{transform:scale(1) translateY(0)}
+.mtitle{font-family:var(--fd);font-size:16px;font-weight:800;margin-bottom:5px}
+.msub{font-size:12px;color:var(--muted);margin-bottom:18px}
+.msteps{display:flex;flex-direction:column;gap:10px}
+.mstep{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;border-radius:9px;background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.08);font-size:12px}
+.snum{width:22px;height:22px;border-radius:50%;background:rgba(0,200,255,.14);color:var(--cyan);font-family:var(--fm);font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;margin-top:1px}
+.macts{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
+
+/* SEARCH */
+.srch{display:flex;gap:10px;margin-bottom:12px;align-items:center}
+.srch input{flex:1;background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:7px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none;transition:border-color .2s}
+.srch input:focus{border-color:rgba(0,200,255,.4)}
+.srch input::placeholder{color:var(--muted)}
+.srch select{background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:7px 10px;color:var(--white);font-family:var(--fm);font-size:10px;outline:none;cursor:pointer}
+.srch select option{background:#071628;color:var(--white)}
+
+/* UNIT CARDS */
+.ucards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ucard{background:rgba(0,200,255,.04);border:1px solid var(--pb);border-radius:12px;padding:14px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.ucard:hover{border-color:rgba(0,200,255,.3);transform:translateY(-2px)}
+.ucard::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;transition:opacity .3s;opacity:0;border-radius:0 0 12px 12px}
+.ucard:hover::after{opacity:1}
+.ucard.uc-crit::after{background:var(--red)}.ucard.uc-high::after{background:var(--amber)}.ucard.uc-norm::after{background:var(--cyan)}.ucard.uc-low::after{background:var(--teal)}
+.uc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.uc-ico{font-size:22px}
+.uc-pct{font-family:var(--fm);font-size:11px;font-weight:700}
+.uc-name{font-family:var(--fd);font-size:13px;font-weight:700;margin-bottom:3px}
+.uc-type{font-size:10px;color:var(--muted);margin-bottom:10px}
+.uc-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.uc-fill{height:100%;border-radius:2px;transition:width 1s}
+.uc-stats{display:flex;gap:12px}
+.uc-stat{display:flex;flex-direction:column;gap:1px}
+.uc-sv{font-family:var(--fm);font-size:11px;font-weight:500}
+.uc-sl{font-size:9px;color:var(--muted)}
+
+/* PROTO CARDS */
+.proto-grid{display:flex;flex-direction:column;gap:8px}
+.pc{background:rgba(0,200,255,.03);border:1px solid rgba(0,200,255,.1);border-radius:10px;padding:13px 15px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px}
+.pc:hover{background:rgba(0,200,255,.07);border-color:rgba(0,200,255,.25)}
+.pc.expanded{border-color:rgba(0,200,255,.3)}
+.pc-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.pc-info{flex:1}
+.pc-name{font-size:12px;font-weight:500;margin-bottom:2px}
+.pc-cat{font-family:var(--fm);font-size:9px;color:var(--muted)}
+.pc-stats{display:flex;gap:12px;margin-left:auto;flex-shrink:0;align-items:center}
+.pc-s{display:flex;flex-direction:column;align-items:center;gap:1px}
+.pc-sv{font-family:var(--fm);font-size:11px;font-weight:600}
+.pc-sl{font-size:9px;color:var(--muted)}
+.pc-expand{display:none;grid-column:1/-1;margin-top:8px;padding:12px;background:rgba(0,0,0,.2);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid rgba(0,200,255,.08)}
+
+/* IA VIEW */
+.scenario-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:4px}
+.sc-card{background:var(--panel);border:2px solid var(--pb);border-radius:13px;padding:14px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.sc-card:hover{transform:translateY(-2px)}
+.sc-card.sc-sel{border-color:var(--cyan);background:rgba(0,200,255,.08)}
+.sc-card.sc-sel.red{border-color:var(--red);background:rgba(255,64,96,.08)}
+.sc-card.sc-sel.teal{border-color:var(--teal);background:rgba(0,255,179,.08)}
+.sc-card.sc-sel.amber{border-color:var(--amber);background:rgba(255,184,48,.08)}
+.sc-card.sc-sel.purple{border-color:var(--purple);background:rgba(165,108,255,.08)}
+.sc-card-ico{font-size:22px;margin-bottom:8px}
+.sc-card-name{font-family:var(--fd);font-size:12px;font-weight:700;margin-bottom:3px}
+.sc-card-desc{font-size:10px;color:var(--muted);line-height:1.4}
+.sc-sel-dot{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--cyan);display:none;animation:pdot 1.5s infinite}
+.sc-card.sc-sel .sc-sel-dot{display:block}
+
+/* BI VIEW */
+.bi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.bi-card{background:var(--panel);border:1px solid var(--pb);border-radius:12px;padding:14px}
+.bi-title{font-family:var(--fm);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.bi-val{font-family:var(--fd);font-size:20px;font-weight:800;margin-bottom:2px}
+.bi-sub{font-size:10px;color:var(--muted)}
+
+/* PAGE TRANSITION */
+.view{animation:none}
+.view.active{animation:vfade .25s ease}
+@keyframes vfade{from{opacity:0;transform:translateX(6px)}to{opacity:1;transform:translateX(0)}}
+
+/* TABS */
+.tabs{display:flex;gap:4px}
+.tab{padding:5px 12px;border-radius:7px;font-size:10px;font-family:var(--fm);cursor:pointer;border:1px solid transparent;background:transparent;color:var(--muted);transition:all .2s}
+.tab.act{background:rgba(0,200,255,.1);border-color:rgba(0,200,255,.25);color:var(--cyan)}
+.tab:hover:not(.act){background:rgba(255,255,255,.04);color:var(--white)}
+
+.divider{width:100%;height:1px;background:var(--pb);margin:2px 0}
+.section-title{font-family:var(--fd);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+
+/* ═══ CONFIG STYLES ═══ */
+.cfg-layout{display:flex;gap:0;height:100%;min-height:calc(100vh - 56px)}
+.cfg-sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--pb);padding:16px 0;background:rgba(4,14,28,.5);overflow-y:auto}
+.cfg-sidebar::-webkit-scrollbar{width:2px}
+.cfg-sidebar::-webkit-scrollbar-thumb{background:rgba(0,200,255,.1)}
+.cfg-group{margin-bottom:6px}
+.cfg-group-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 16px 4px;display:block}
+.cfg-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;font-size:12px;color:var(--muted);position:relative}
+.cfg-item:hover{background:rgba(0,200,255,.05);color:var(--white)}
+.cfg-item.cfg-act{background:rgba(0,200,255,.08);border-left-color:var(--cyan);color:var(--cyan)}
+.cfg-item-ico{font-size:14px;flex-shrink:0}
+.cfg-badge{margin-left:auto;font-family:var(--fm);font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600}
+.cfg-badge-ok{background:rgba(0,255,179,.1);color:var(--teal)}
+.cfg-badge-warn{background:rgba(255,184,48,.1);color:var(--amber)}
+.cfg-badge-err{background:rgba(255,64,96,.1);color:var(--red)}
+.cfg-badge-new{background:rgba(165,108,255,.1);color:var(--purple)}
+
+.cfg-content{flex:1;overflow-y:auto;padding:20px 24px}
+.cfg-content::-webkit-scrollbar{width:3px}
+.cfg-content::-webkit-scrollbar-thumb{background:rgba(0,200,255,.15);border-radius:2px}
+
+.cfg-section{display:none}
+.cfg-section.cfg-active{display:block}
+
+.cfg-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--pb)}
+.cfg-title{font-family:var(--fd);font-size:16px;font-weight:800}
+.cfg-subtitle{font-size:11px;color:var(--muted);margin-top:3px}
+
+.fgrid{display:grid;gap:12px}
+.fgrid-2{grid-template-columns:1fr 1fr}
+.fgrid-3{grid-template-columns:1fr 1fr 1fr}
+.fgrid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-family:var(--fm);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.fg input,.fg select,.fg textarea{background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.15);border-radius:8px;padding:8px 11px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none;transition:border-color .2s;width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:rgba(0,200,255,.4);background:rgba(0,200,255,.07)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--muted)}
+.fg select option{background:#071628;color:var(--white)}
+.fg textarea{resize:vertical;min-height:72px;line-height:1.5}
+.fg .hint{font-size:10px;color:var(--muted);margin-top:2px}
+
+.fsep{height:1px;background:var(--pb);margin:18px 0}
+.ftitle{font-family:var(--fd);font-size:12px;font-weight:700;color:var(--white);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ftitle span{font-size:16px}
+
+.api-card{background:rgba(0,200,255,.03);border:1px solid rgba(0,200,255,.12);border-radius:12px;padding:16px;margin-bottom:10px;transition:all .2s}
+.api-card:hover{border-color:rgba(0,200,255,.25);background:rgba(0,200,255,.06)}
+.api-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.api-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.api-info{flex:1}
+.api-name{font-weight:600;font-size:13px;margin-bottom:2px}
+.api-desc{font-size:10px;color:var(--muted)}
+.api-status{display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px}
+.api-status-dot{width:7px;height:7px;border-radius:50%}
+.api-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.api-full{grid-column:1/-1}
+.test-btn{font-family:var(--fm);font-size:9px;padding:5px 12px;border-radius:6px;border:1px solid rgba(0,200,255,.25);background:rgba(0,200,255,.08);color:var(--cyan);cursor:pointer;transition:all .2s}
+.test-btn:hover{background:rgba(0,200,255,.15)}
+.test-ok{border-color:rgba(0,255,179,.3);background:rgba(0,255,179,.08);color:var(--teal)}
+.test-err{border-color:rgba(255,64,96,.3);background:rgba(255,64,96,.08);color:var(--red)}
+
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:9px;background:rgba(0,200,255,.03);border:1px solid rgba(0,200,255,.08);margin-bottom:7px;transition:background .2s}
+.tog-row:hover{background:rgba(0,200,255,.07)}
+.tog-info{flex:1}
+.tog-label{font-size:12px;font-weight:500;margin-bottom:2px}
+.tog-desc{font-size:10px;color:var(--muted)}
+.tog{position:relative;width:38px;height:20px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:all .25s}
+.tog input:checked + .tog-track{background:rgba(0,200,255,.3);border-color:rgba(0,200,255,.5)}
+.tog-track::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:all .25s}
+.tog input:checked + .tog-track::after{transform:translateX(18px);background:var(--cyan)}
+
+.range-row{display:flex;align-items:center;gap:12px}
+.range-row input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(0,200,255,.15);outline:none;cursor:pointer}
+.range-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer;box-shadow:0 0 6px rgba(0,200,255,.4)}
+.range-val{font-family:var(--fm);font-size:11px;color:var(--cyan);min-width:32px;text-align:right}
+
+.cert-box{background:rgba(165,108,255,.04);border:1px solid rgba(165,108,255,.15);border-radius:10px;padding:14px}
+.cert-box .cert-status{font-family:var(--fm);font-size:10px;color:var(--purple);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.upload-zone{border:2px dashed rgba(0,200,255,.2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(0,200,255,.02)}
+.upload-zone:hover{border-color:rgba(0,200,255,.45);background:rgba(0,200,255,.06)}
+.upload-zone p{font-size:11px;color:var(--muted);margin-top:6px}
+
+.notif-channel{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:9px;background:rgba(0,200,255,.03);border:1px solid rgba(0,200,255,.08);margin-bottom:7px}
+.notif-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.notif-info{flex:1}
+.notif-name{font-size:12px;font-weight:500}
+.notif-sub{font-size:10px;color:var(--muted)}
+
+.schedule-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:12px}
+.day-cell{background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.1);border-radius:7px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--fm);font-size:9px;color:var(--muted)}
+.day-cell:hover{border-color:rgba(0,200,255,.3);color:var(--white)}
+.day-cell.dc-on{background:rgba(0,200,255,.12);border-color:rgba(0,200,255,.3);color:var(--cyan)}
+
+.log-entry{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,200,255,.05);font-size:11px}
+.log-entry:last-child{border-bottom:none}
+.log-time{font-family:var(--fm);font-size:9px;color:var(--muted);flex-shrink:0;width:100px}
+.log-level{font-family:var(--fm);font-size:8px;padding:2px 6px;border-radius:3px;flex-shrink:0;align-self:flex-start}
+.ll-info{background:rgba(0,200,255,.1);color:var(--cyan)}
+.ll-warn{background:rgba(255,184,48,.1);color:var(--amber)}
+.ll-err{background:rgba(255,64,96,.1);color:var(--red)}
+.ll-ok{background:rgba(0,255,179,.1);color:var(--teal)}
+.log-msg{flex:1;color:var(--white);line-height:1.4}
+
+.save-bar{position:sticky;bottom:0;left:0;right:0;background:rgba(4,14,28,.95);border-top:1px solid rgba(0,200,255,.15);padding:12px 0;display:flex;justify-content:flex-end;gap:10px;backdrop-filter:blur(10px);margin-top:20px}
+
+.color-swatch{width:28px;height:28px;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:transform .15s}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.sw-act{border-color:var(--white)}
+.color-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+.health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.health-item{background:rgba(0,200,255,.03);border:1px solid var(--pb);border-radius:9px;padding:12px;text-align:center}
+.health-ico{font-size:20px;margin-bottom:4px}
+.health-val{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:2px}
+.health-lbl{font-size:9px;color:var(--muted);font-family:var(--fm)}
+</style>
+</head>
+<body>
+<div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="s-logo">SG</div>
+  <nav class="s-nav">
+    <button class="nb act" data-view="dashboard"><span>📊</span><span class="tip">Dashboard</span></button>
+    <button class="nb" data-view="rh"><span>👥</span><span class="tip">RH · Funcionários</span></button>
+    <button class="nb" data-view="unidades"><span>🏥</span><span class="tip">Unidades de Saúde</span></button>
+    <button class="nb" data-view="protocolo"><span>📋</span><span class="tip">Protocolos</span></button>
+    <div class="s-sep"></div>
+    <button class="nb" data-view="ia"><span>🤖</span><span class="tip">IA · Cenários</span></button>
+    <button class="nb" data-view="bi"><span>📈</span><span class="tip">BI · Relatórios</span></button>
+    <button class="nb" data-view="integ"><span>🔗</span><span class="tip">Integrações API</span></button>
+  </nav>
+  <button class="nb" data-view="config" style="margin-top:auto"><span>⚙️</span><span class="tip">Configurações</span></button>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-l">
+      <div class="hdr-title">SIGS — <span>Sistema Inteligente</span> de Gestão da Saúde</div>
+      <div class="badge b-live"><span class="pdot"></span>LIVE · 5 APIs</div>
+      <div class="badge b-loc">⚡ Nova Lima, MG</div>
+    </div>
+    <div class="hdr-r">
+      <div class="clk"><strong id="clk">--:--:--</strong> · Seg 16/Mar/2026</div>
+      <button class="abtn" onclick="openModal('alerts')">🔔<span class="abadge" id="alertCount">3</span></button>
+      <div class="upill"><div class="uav">GM</div><span class="uname">Gestor Municipal</span></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ═══════════════ DASHBOARD ═══════════════ -->
+    <div class="view active" id="view-dashboard">
+
+      <!-- Scenario Bar -->
+      <div class="sc-bar">
+        <span class="sc-label">🎯 Cenário:</span>
+        <button class="sc-btn sc-act" id="sc0" onclick="setScenario(0)">📊 Normal</button>
+        <button class="sc-btn sc-red" id="sc1" onclick="setScenario(1)">🔴 Crise UPA</button>
+        <button class="sc-btn sc-teal" id="sc2" onclick="setScenario(2)">✅ Pós Remanejo</button>
+        <button class="sc-btn sc-amber" id="sc3" onclick="setScenario(3)">⚠️ Pico Demanda</button>
+        <button class="sc-btn sc-purple" id="sc4" onclick="setScenario(4)">🌙 Plantão Noturno</button>
+        <div style="flex:1"></div>
+        <span id="sc-status" style="font-family:var(--fm);font-size:10px;color:var(--muted)">Dados em tempo real</span>
+      </div>
+
+      <!-- AI Banner -->
+      <div class="ai-banner" id="aiBanner">
+        <div class="ai-ico">🧠</div>
+        <div class="ai-txt">
+          <div class="ai-lbl">⚡ Insight IA · Confiança <span id="aiConf">94.7</span>%</div>
+          <div class="ai-msg" id="aiMsg">Sobrecarga na <strong>UPA Centro</strong> (+38min espera). Ociosidade 31% na <strong>UBS Jardim Sul</strong>. Remanejo de <strong>2 Clínicos + 1 Enfermeiro</strong> reduz espera em ~25min.</div>
+        </div>
+        <div class="ai-acts">
+          <button class="btn btn-g btn-sm" onclick="this.closest('.ai-banner').style.display='none'">Ignorar</button>
+          <button class="btn btn-p btn-sm" onclick="openModal('action')">⚡ Aplicar</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-bot" style="background:var(--cyan)"></div>
+          <div class="kpi-t"><div class="kico ic-cyan">⏱️</div><span class="kdelta d-dn" id="k0d">↓14%</span></div>
+          <div class="kval" style="color:var(--cyan)" id="k0">22<span style="font-size:13px;color:var(--muted)"> min</span></div>
+          <div class="klbl">Espera Média</div></div>
+        <div class="kpi"><div class="kpi-bot" style="background:var(--teal)"></div>
+          <div class="kpi-t"><div class="kico ic-teal">👨‍⚕️</div><span class="kdelta d-neu" id="k1d">LIVE</span></div>
+          <div class="kval" style="color:var(--teal)" id="k1">142<span style="font-size:13px;color:var(--muted)">/150</span></div>
+          <div class="klbl">Profissionais Ativos</div></div>
+        <div class="kpi"><div class="kpi-bot" style="background:var(--amber)"></div>
+          <div class="kpi-t"><div class="kico ic-amber">📈</div><span class="kdelta d-up" id="k2d">↑7%</span></div>
+          <div class="kval" style="color:var(--amber)" id="k2">1.284</div>
+          <div class="klbl">Atendimentos Hoje</div></div>
+        <div class="kpi"><div class="kpi-bot" style="background:var(--red)"></div>
+          <div class="kpi-t"><div class="kico ic-red">🏥</div><span class="kdelta d-up" id="k3d">↑2</span></div>
+          <div class="kval" style="color:var(--red)" id="k3">3</div>
+          <div class="klbl">Unidades Críticas</div></div>
+        <div class="kpi"><div class="kpi-bot" style="background:var(--purple)"></div>
+          <div class="kpi-t"><div class="kico ic-purple">✅</div><span class="kdelta d-dn" id="k4d">↓1.2%</span></div>
+          <div class="kval" style="color:var(--purple)" id="k4">94.2<span style="font-size:13px">%</span></div>
+          <div class="klbl">Protocolo Cumprido</div></div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="g3">
+        <div class="pnl">
+          <div class="pnl-hdr">
+            <span class="pnl-title">Fluxo de Pacientes por Unidade</span>
+            <div class="tabs">
+              <button class="tab act" onclick="switchTab(this,'demandTabs')">6h</button>
+              <button class="tab" onclick="switchTab(this,'demandTabs')">24h</button>
+              <button class="tab" onclick="switchTab(this,'demandTabs')">7d</button>
+            </div>
+          </div>
+          <div class="chart-wrap chart-h200"><canvas id="demandChart"></canvas></div>
+          <div style="display:flex;gap:14px;margin-top:10px">
+            <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:12px;height:2px;background:var(--cyan);display:inline-block;border-radius:1px"></span>UPA Centro</span>
+            <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:12px;height:2px;background:var(--teal);display:inline-block;border-radius:1px"></span>UBS Jardim Sul</span>
+            <span style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px"><span style="width:12px;height:2px;background:var(--amber);display:inline-block;border-radius:1px"></span>PA Norte</span>
+          </div>
+        </div>
+
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">Alocação de Profissionais</span><span class="ptag">RH · API</span></div>
+          <table class="tbl">
+            <thead><tr><th>Profissional</th><th>Cargo</th><th>Unidade</th><th>Status</th></tr></thead>
+            <tbody id="teamTable">
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="pnl">
+            <div class="pnl-hdr"><span class="pnl-title">Ocupação das Unidades</span><span class="ptag">Saúde · API</span></div>
+            <div class="occ-list" id="occList"></div>
+          </div>
+          <div class="pnl" style="flex:1">
+            <div class="pnl-hdr"><span class="pnl-title">Feed Integração</span><span class="ptag">Live</span></div>
+            <div class="feed" id="feedList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="g2">
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">Aderência por Especialidade</span><span class="ptag">Protocolo</span></div>
+          <div class="chart-wrap chart-h170"><canvas id="protoChart"></canvas></div>
+        </div>
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">Distribuição de Carga</span><span class="ptag">BI</span></div>
+          <div class="chart-wrap chart-h170"><canvas id="donutChart"></canvas></div>
+        </div>
+      </div>
+    </div><!-- /dashboard -->
+
+    <!-- ═══════════════ RH ═══════════════ -->
+    <div class="view" id="view-rh">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-family:var(--fd);font-size:18px;font-weight:800">👥 Gestão de RH</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Todos os profissionais cadastrados — integração com sistema de RH da Prefeitura</div>
+        </div>
+        <button class="btn btn-p" onclick="openModal('newFunc')">+ Novo Profissional</button>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="kpis" style="grid-template-columns:repeat(5,1fr)">
+        <div class="kpi"><div class="kval" style="color:var(--cyan)">150</div><div class="klbl">Total Cadastrados</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--teal)">142</div><div class="klbl">Em Escala Hoje</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--amber)">5</div><div class="klbl">Em Férias</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--red)">3</div><div class="klbl">Sem Check-in</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--purple)">12</div><div class="klbl">Plantão Noturno</div></div>
+      </div>
+
+      <div class="pnl">
+        <div class="srch">
+          <input type="text" placeholder="🔍  Buscar por nome, cargo ou matrícula..." id="rhSearch" oninput="filterRH()">
+          <select onchange="filterRH()" id="rhFilter">
+            <option value="">Todos os cargos</option>
+            <option>Clínico Geral</option><option>Enfermeiro(a)</option><option>Pediatra</option>
+            <option>Emergência</option><option>Psiquiatra</option><option>Nutricionista</option>
+            <option>Administrativo</option><option>Técnico Enf.</option>
+          </select>
+          <select onchange="filterRH()" id="rhStatus">
+            <option value="">Todos os status</option>
+            <option>Ativo</option><option>Férias</option><option>Folga</option><option>Sobrecarga</option>
+          </select>
+        </div>
+        <table class="tbl" id="rhTable">
+          <thead><tr><th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Especialidade</th><th>Unidade</th><th>Turno</th><th>Status</th><th>Ação</th></tr></thead>
+          <tbody id="rhBody"></tbody>
+        </table>
+      </div>
+    </div><!-- /rh -->
+
+    <!-- ═══════════════ UNIDADES ═══════════════ -->
+    <div class="view" id="view-unidades">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-family:var(--fd);font-size:18px;font-weight:800">🏥 Unidades de Saúde</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Cadastro completo de todas as unidades — dados integrados com o Sistema de Saúde</div>
+        </div>
+        <button class="btn btn-p" onclick="openModal('newUnit')">+ Nova Unidade</button>
+      </div>
+      <div class="ucards" id="unidadeCards"></div>
+
+      <div class="pnl">
+        <div class="pnl-hdr"><span class="pnl-title">Detalhamento por Unidade</span><span class="ptag">Dados em tempo real</span></div>
+        <table class="tbl">
+          <thead><tr><th>Código</th><th>Nome</th><th>Tipo</th><th>Endereço</th><th>Leitos</th><th>Equipe</th><th>Ocupação</th><th>Status</th></tr></thead>
+          <tbody id="unidBody"></tbody>
+        </table>
+      </div>
+    </div><!-- /unidades -->
+
+    <!-- ═══════════════ PROTOCOLO ═══════════════ -->
+    <div class="view" id="view-protocolo">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-family:var(--fd);font-size:18px;font-weight:800">📋 Protocolos de Saúde</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Todos os protocolos assistenciais cadastrados — monitorados em tempo real</div>
+        </div>
+        <button class="btn btn-p">+ Novo Protocolo</button>
+      </div>
+
+      <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi"><div class="kval" style="color:var(--cyan)">28</div><div class="klbl">Total de Protocolos</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--teal)">94.2%</div><div class="klbl">Aderência Média</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--red)">2</div><div class="klbl">Abaixo do Target</div></div>
+        <div class="kpi"><div class="kval" style="color:var(--amber)">342</div><div class="klbl">Aplicações Hoje</div></div>
+      </div>
+
+      <div class="pnl">
+        <div class="srch">
+          <input type="text" placeholder="🔍  Buscar protocolo..." id="protoSearch" oninput="filterProto()">
+          <select id="protoFilter" onchange="filterProto()">
+            <option value="">Todas as áreas</option>
+            <option>Clínica Geral</option><option>Pediatria</option><option>Emergência</option>
+            <option>Obstetrícia</option><option>Saúde Mental</option><option>Ortopedia</option>
+            <option>Nutrição</option><option>Geriatria</option>
+          </select>
+          <select id="protoStatus" onchange="filterProto()">
+            <option value="">Todos</option><option>Ativo</option><option>Revisão</option><option>Suspenso</option>
+          </select>
+        </div>
+        <div class="proto-grid" id="protoList"></div>
+      </div>
+    </div><!-- /protocolo -->
+
+    <!-- ═══════════════ IA ═══════════════ -->
+    <div class="view" id="view-ia">
+      <div>
+        <div style="font-family:var(--fd);font-size:18px;font-weight:800">🤖 Central de IA · Cenários Inteligentes</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Mineração de dados e recomendações automáticas para tomada de decisão</div>
+      </div>
+
+      <div class="scenario-cards">
+        <div class="sc-card sc-sel" id="iasc0" onclick="selectIAScenario(0)"><div class="sc-sel-dot"></div><div class="sc-card-ico">📊</div><div class="sc-card-name">Operação Normal</div><div class="sc-card-desc">Sistema estável, fluxo dentro do esperado</div></div>
+        <div class="sc-card red" id="iasc1" onclick="selectIAScenario(1)"><div class="sc-sel-dot"></div><div class="sc-card-ico">🔴</div><div class="sc-card-name">Crise na UPA</div><div class="sc-card-desc">Lotação crítica 92%, tempo de espera elevado</div></div>
+        <div class="sc-card teal" id="iasc2" onclick="selectIAScenario(2)"><div class="sc-sel-dot"></div><div class="sc-card-ico">🏃</div><div class="sc-card-name">Surto Endêmico</div><div class="sc-card-desc">Pico de demanda — dengue/flu elevado</div></div>
+        <div class="sc-card amber" id="iasc3" onclick="selectIAScenario(3)"><div class="sc-sel-dot"></div><div class="sc-card-ico">📉</div><div class="sc-card-name">Falta de Equipe</div><div class="sc-card-desc">Absenteísmo alto, cobertura comprometida</div></div>
+      </div>
+
+      <div class="g2">
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">🧠 Análise do Cenário</span><span class="ptag">IA · GPT</span></div>
+          <div id="iaAnalysis" style="font-size:12px;color:var(--white);line-height:1.7;padding:4px 0"></div>
+          <div style="margin-top:14px;display:flex;gap:8px" id="iaActions"></div>
+        </div>
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">Indicadores do Cenário</span></div>
+          <div class="chart-wrap chart-h200"><canvas id="iaChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="pnl">
+        <div class="pnl-hdr"><span class="pnl-title">📋 Plano de Ação Recomendado pela IA</span></div>
+        <div id="iaSteps" class="msteps" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ BI ═══════════════ -->
+    <div class="view" id="view-bi">
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800">📈 BI · Painel de Relatórios</div>
+      <div class="bi-grid">
+        <div class="bi-card"><div class="bi-title">Total Atend. Mês</div><div class="bi-val" style="color:var(--cyan)">32.847</div><div class="bi-sub">↑ 8.4% vs mês anterior</div></div>
+        <div class="bi-card"><div class="bi-title">Custo Médio/Atend.</div><div class="bi-val" style="color:var(--teal)">R$87,40</div><div class="bi-sub">↓ 3.1% vs mês anterior</div></div>
+        <div class="bi-card"><div class="bi-title">Absenteísmo</div><div class="bi-val" style="color:var(--amber)">5.3%</div><div class="bi-sub">Meta: ≤ 6%  ✓</div></div>
+        <div class="bi-card"><div class="bi-title">Satisfação Paciente</div><div class="bi-val" style="color:var(--purple)">8.7/10</div><div class="bi-sub">↑ 0.4 vs trimestre ant.</div></div>
+        <div class="bi-card"><div class="bi-title">Tempo Méd. Resolução</div><div class="bi-val" style="color:var(--teal)">24min</div><div class="bi-sub">Meta: ≤ 30min  ✓</div></div>
+        <div class="bi-card"><div class="bi-title">Reinternações 30d</div><div class="bi-val" style="color:var(--red)">4.1%</div><div class="bi-sub">↑ 0.3% — monitorar</div></div>
+      </div>
+      <div class="g2">
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">Evolução Mensal de Atendimentos</span></div>
+          <div class="chart-wrap chart-h200"><canvas id="biChart1"></canvas></div>
+        </div>
+        <div class="pnl">
+          <div class="pnl-hdr"><span class="pnl-title">Distribuição por Especialidade</span></div>
+          <div class="chart-wrap chart-h200"><canvas id="biChart2"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ INTEGRAÇÕES ═══════════════ -->
+    <div class="view" id="view-integ">
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800">🔗 Integrações de API</div>
+      <div class="ucards" style="grid-template-columns:repeat(3,1fr)">
+        <div class="ucard uc-norm" onclick="openModal('apiDetail')"><div class="uc-top"><span class="uc-ico">👥</span><span class="sp sp-act">● Conectada</span></div><div class="uc-name">API de RH</div><div class="uc-type">Prefeitura Municipal · REST</div><div class="uc-stats"><div class="uc-stat"><span class="uc-sv" style="color:var(--cyan)">142</span><span class="uc-sl">registros sync</span></div><div class="uc-stat"><span class="uc-sv" style="color:var(--teal)">99.8%</span><span class="uc-sl">uptime</span></div></div></div>
+        <div class="ucard uc-norm"><div class="uc-top"><span class="uc-ico">🏥</span><span class="sp sp-act">● Conectada</span></div><div class="uc-name">API Sistema Saúde</div><div class="uc-type">SISAB/ESUS · REST</div><div class="uc-stats"><div class="uc-stat"><span class="uc-sv" style="color:var(--cyan)">1.284</span><span class="uc-sl">prontuários hoje</span></div><div class="uc-stat"><span class="uc-sv" style="color:var(--teal)">99.5%</span><span class="uc-sl">uptime</span></div></div></div>
+        <div class="ucard uc-norm"><div class="uc-top"><span class="uc-ico">📋</span><span class="sp sp-act">● Conectada</span></div><div class="uc-name">API Protocolos</div><div class="uc-type">CFM/CRM · REST</div><div class="uc-stats"><div class="uc-stat"><span class="uc-sv" style="color:var(--cyan)">28</span><span class="uc-sl">protocolos ativos</span></div><div class="uc-stat"><span class="uc-sv" style="color:var(--teal)">100%</span><span class="uc-sl">uptime</span></div></div></div>
+        <div class="ucard uc-norm"><div class="uc-top"><span class="uc-ico">📊</span><span class="sp sp-act">● Conectada</span></div><div class="uc-name">API BI / Analytics</div><div class="uc-type">Power BI Embedded · REST</div><div class="uc-stats"><div class="uc-stat"><span class="uc-sv" style="color:var(--cyan)">32.8k</span><span class="uc-sl">eventos/mês</span></div><div class="uc-stat"><span class="uc-sv" style="color:var(--teal)">98.9%</span><span class="uc-sl">uptime</span></div></div></div>
+        <div class="ucard uc-norm"><div class="uc-top"><span class="uc-ico">📱</span><span class="sp sp-act">● Conectada</span></div><div class="uc-name">API SMS / Notificações</div><div class="uc-type">Twilio · REST</div><div class="uc-stats"><div class="uc-stat"><span class="uc-sv" style="color:var(--cyan)">87</span><span class="uc-sl">msgs enviadas hoje</span></div><div class="uc-stat"><span class="uc-sv" style="color:var(--teal)">99.9%</span><span class="uc-sl">uptime</span></div></div></div>
+        <div class="ucard uc-high"><div class="uc-top"><span class="uc-ico">🗺️</span><span class="sp sp-alrt">⚠ Config.</span></div><div class="uc-name">API Geolocalização</div><div class="uc-type">Google Maps · REST</div><div class="uc-stats"><div class="uc-stat"><span class="uc-sv" style="color:var(--amber)">—</span><span class="uc-sl">aguardando chave</span></div><div class="uc-stat"><span class="uc-sv" style="color:var(--amber)">—</span><span class="uc-sl">uptime</span></div></div></div>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════ CONFIGURAÇÕES ═══════════════ -->
+    <div class="view" id="view-config" style="padding:0;height:calc(100vh - 56px);display:none;flex-direction:row">
+
+      <!-- Config Sidebar -->
+      <div class="cfg-sidebar">
+        <span class="cfg-group-label">🏛️ Município</span>
+        <div class="cfg-group">
+          <div class="cfg-item cfg-act" onclick="cfgNav(this,'cfg-municipio')"><span class="cfg-item-ico">🗺️</span>Dados do Município<span class="cfg-badge cfg-badge-ok">OK</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-secretaria')"><span class="cfg-item-ico">🏢</span>Secretaria de Saúde<span class="cfg-badge cfg-badge-ok">OK</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-regioes')"><span class="cfg-item-ico">📍</span>Regiões / Distritos</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-metas')"><span class="cfg-item-ico">🎯</span>Metas & Indicadores<span class="cfg-badge cfg-badge-warn">Rev.</span></div>
+        </div>
+
+        <span class="cfg-group-label">🔗 Integrações SUS</span>
+        <div class="cfg-group">
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-rnds')"><span class="cfg-item-ico">🌐</span>RNDS / e-SUS<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-cnes')"><span class="cfg-item-ico">🏥</span>CNES / DATASUS<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-sinan')"><span class="cfg-item-ico">🦠</span>SINAN / Epidemio.<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-cadsus')"><span class="cfg-item-ico">🪪</span>CAD-SUS / RNDS<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-sisab')"><span class="cfg-item-ico">📊</span>SISAB / SIAPS<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-horus')"><span class="cfg-item-ico">💊</span>Hórus / REMUME<span class="cfg-badge cfg-badge-warn">Config</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-rac')"><span class="cfg-item-ico">📋</span>RAC / Prontuário<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+        </div>
+
+        <span class="cfg-group-label">🏛️ Prefeitura / Internos</span>
+        <div class="cfg-group">
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-rh-api')"><span class="cfg-item-ico">👥</span>API RH Prefeitura<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-financeiro')"><span class="cfg-item-ico">💰</span>Sistema Financeiro<span class="cfg-badge cfg-badge-warn">Parcial</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-protocolo-api')"><span class="cfg-item-ico">📝</span>API Protocolos<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-frotas')"><span class="cfg-item-ico">🚑</span>Gestão de Frotas<span class="cfg-badge cfg-badge-err">Off</span></div>
+        </div>
+
+        <span class="cfg-group-label">📣 Notificações</span>
+        <div class="cfg-group">
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-notif')"><span class="cfg-item-ico">🔔</span>Canais & Alertas<span class="cfg-badge cfg-badge-ok">3 ativos</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-sms')"><span class="cfg-item-ico">📱</span>SMS / Twilio<span class="cfg-badge cfg-badge-ok">Ativo</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-email')"><span class="cfg-item-ico">📧</span>E-mail SMTP</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-whatsapp')"><span class="cfg-item-ico">💬</span>WhatsApp Business<span class="cfg-badge cfg-badge-new">Beta</span></div>
+        </div>
+
+        <span class="cfg-group-label">🤖 IA & Análise</span>
+        <div class="cfg-group">
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-ia-params')"><span class="cfg-item-ico">🧠</span>Parâm. do Motor IA</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-mineracao')"><span class="cfg-item-ico">⛏️</span>Mineração de Dados</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-alertas-ai')"><span class="cfg-item-ico">⚡</span>Regras de Alertas</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-preditivo')"><span class="cfg-item-ico">🔮</span>Modelo Preditivo</div>
+        </div>
+
+        <span class="cfg-group-label">🔐 Segurança</span>
+        <div class="cfg-group">
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-usuarios')"><span class="cfg-item-ico">👤</span>Usuários & Perfis</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-lgpd')"><span class="cfg-item-ico">🛡️</span>LGPD & Privacidade<span class="cfg-badge cfg-badge-warn">Rev.</span></div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-auditoria')"><span class="cfg-item-ico">📜</span>Log de Auditoria</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-cert')"><span class="cfg-item-ico">🔏</span>Certificado Digital</div>
+        </div>
+
+        <span class="cfg-group-label">⚙️ Sistema</span>
+        <div class="cfg-group">
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-geral')"><span class="cfg-item-ico">🖥️</span>Configurações Gerais</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-backup')"><span class="cfg-item-ico">💾</span>Backup & Restore</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-performance')"><span class="cfg-item-ico">📈</span>Performance & Health</div>
+          <div class="cfg-item" onclick="cfgNav(this,'cfg-logs')"><span class="cfg-item-ico">📋</span>Logs do Sistema</div>
+        </div>
+      </div>
+
+      <!-- Config Content -->
+      <div class="cfg-content">
+
+        <!-- ── Dados do Município ── -->
+        <div class="cfg-section cfg-active" id="cfg-municipio">
+          <div class="cfg-header">
+            <div><div class="cfg-title">🗺️ Dados do Município</div><div class="cfg-subtitle">Parametrização base do município — utilizada em todos os módulos e integrações</div></div>
+            <div style="display:flex;gap:8px"><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar Alterações</button></div>
+          </div>
+          <div class="fgrid fgrid-3">
+            <div class="fg"><label>Nome do Município</label><input value="Nova Lima"></div>
+            <div class="fg"><label>Código IBGE</label><input value="3144805"></div>
+            <div class="fg"><label>UF / Estado</label><select><option selected>MG — Minas Gerais</option><option>SP — São Paulo</option><option>RJ — Rio de Janeiro</option></select></div>
+            <div class="fg"><label>Código SIGTAP</label><input value="310620"></div>
+            <div class="fg"><label>Regional de Saúde (RS)</label><input value="SRS Belo Horizonte — RS 15"></div>
+            <div class="fg"><label>Macrorregião de Saúde</label><input value="Central — BH"></div>
+            <div class="fg"><label>CNPJ da Prefeitura</label><input value="18.715.540/0001-33"></div>
+            <div class="fg"><label>Código CNES Municipal</label><input value="2338075"></div>
+            <div class="fg"><label>População Estimada (IBGE)</label><input value="118.440"></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>📍</span> Localização & Contato</div>
+          <div class="fgrid fgrid-3">
+            <div class="fg" style="grid-column:1/-1"><label>Endereço da Secretaria Municipal de Saúde</label><input value="Rua Salomão Guimarães, 400 – Centro – Nova Lima – MG – CEP 34000-000"></div>
+            <div class="fg"><label>Telefone da Secretaria</label><input value="(31) 3541-9700"></div>
+            <div class="fg"><label>E-mail Oficial</label><input value="saude@pmnl.mg.gov.br"></div>
+            <div class="fg"><label>Site da Prefeitura</label><input value="https://www.novalima.mg.gov.br"></div>
+            <div class="fg"><label>Secretário(a) Municipal de Saúde</label><input value=""></div>
+            <div class="fg"><label>CPF do Responsável RNDS</label><input value="" placeholder="000.000.000-00"></div>
+            <div class="fg"><label>Fuso Horário</label><select><option selected>America/Sao_Paulo (UTC-3)</option><option>America/Manaus (UTC-4)</option><option>America/Belem (UTC-3)</option></select></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>📊</span> Perfil Epidemiológico do Município</div>
+          <div class="fgrid fgrid-4">
+            <div class="fg"><label>IDH Municipal</label><input value="0,813"></div>
+            <div class="fg"><label>Cobertura ESF (%)</label><input value="72"></div>
+            <div class="fg"><label>Nº Equipes SF</label><input value="18"></div>
+            <div class="fg"><label>Nº ACS</label><input value="112"></div>
+            <div class="fg"><label>Pop. Vulnerável Estimada</label><input value="22.400"></div>
+            <div class="fg"><label>Área Territorial (km²)</label><input value="429"></div>
+            <div class="fg"><label>Densidade (hab/km²)</label><input value="276"></div>
+            <div class="fg"><label>Índice de Envelhecimento</label><input value="84,7"></div>
+          </div>
+        </div>
+
+        <!-- ── Secretaria ── -->
+        <div class="cfg-section" id="cfg-secretaria">
+          <div class="cfg-header"><div><div class="cfg-title">🏢 Secretaria de Saúde</div><div class="cfg-subtitle">Estrutura organizacional e responsáveis por módulo</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="ftitle"><span>🏛️</span> Organograma de Responsáveis</div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Secretário(a) de Saúde</label><input value=""></div>
+            <div class="fg"><label>E-mail do Secretário</label><input value="" placeholder="secretario@pmnl.mg.gov.br"></div>
+            <div class="fg"><label>Diretor de Atenção Primária</label><input value=""></div>
+            <div class="fg"><label>Diretor de Urgência/Emergência</label><input value=""></div>
+            <div class="fg"><label>Coordenador de Epidemiologia</label><input value=""></div>
+            <div class="fg"><label>Coordenador de RH</label><input value=""></div>
+            <div class="fg"><label>Gestor de TI / Sistemas</label><input value=""></div>
+            <div class="fg"><label>Responsável Técnico RNDS</label><input value=""></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>⏰</span> Horários de Operação</div>
+          <div class="fgrid fgrid-3">
+            <div class="fg"><label>Horário UBS (seg-sex)</label><input value="07:00 – 19:00"></div>
+            <div class="fg"><label>Horário UPA (24h)</label><input value="00:00 – 24:00"></div>
+            <div class="fg"><label>Plantão mínimo noturno</label><input value="12 profissionais"></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>🎯</span> Metas do Contrato de Gestão</div>
+          <div class="fgrid fgrid-4">
+            <div class="fg"><label>Espera máx. UPA (min)</label><input value="30"></div>
+            <div class="fg"><label>Espera máx. UBS (min)</label><input value="20"></div>
+            <div class="fg"><label>Aderência protocolo mín. (%)</label><input value="90"></div>
+            <div class="fg"><label>Absenteísmo máx. (%)</label><input value="6"></div>
+            <div class="fg"><label>Satisfação mín. (0-10)</label><input value="7,5"></div>
+            <div class="fg"><label>Cobertura vacinal mín. (%)</label><input value="95"></div>
+            <div class="fg"><label>Reinternação 30d máx. (%)</label><input value="5"></div>
+            <div class="fg"><label>Meta atend./mês</label><input value="30.000"></div>
+          </div>
+        </div>
+
+        <!-- ── Regiões ── -->
+        <div class="cfg-section" id="cfg-regioes">
+          <div class="cfg-header"><div><div class="cfg-title">📍 Regiões / Distritos Sanitários</div><div class="cfg-subtitle">Mapeamento geográfico das regiões de cobertura</div></div><button class="test-btn" onclick="cfgSaved(this)">+ Adicionar Região</button></div>
+          <div style="overflow:auto">
+          <table class="tbl">
+            <thead><tr><th>Código</th><th>Nome da Região</th><th>Bairros Cobertos</th><th>Unidades</th><th>Pop. Est.</th><th>Resp. Distrital</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">REG-01</span></td><td>Centro</td><td>Centro, Alto das Cabanas, Alphaville</td><td>3</td><td>32.100</td><td><input style="background:transparent;border:none;color:var(--white);font-size:11px;outline:none;width:140px" value=""></td><td><span class="sp sp-act">● Ativa</span></td></tr>
+              <tr><td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">REG-02</span></td><td>Jardim Sul</td><td>Jd. Sul, Jd. Canadá, Vila Rica</td><td>2</td><td>28.500</td><td><input style="background:transparent;border:none;color:var(--white);font-size:11px;outline:none;width:140px" value=""></td><td><span class="sp sp-act">● Ativa</span></td></tr>
+              <tr><td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">REG-03</span></td><td>Norte</td><td>Bairro Norte, Vera Cruz, Novo Mundo</td><td>2</td><td>24.200</td><td><input style="background:transparent;border:none;color:var(--white);font-size:11px;outline:none;width:140px" value=""></td><td><span class="sp sp-act">● Ativa</span></td></tr>
+              <tr><td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">REG-04</span></td><td>Leste / Industrial</td><td>Vila Industrial, Retiro, Honório Bicalho</td><td>1</td><td>18.900</td><td><input style="background:transparent;border:none;color:var(--white);font-size:11px;outline:none;width:140px" value=""></td><td><span class="sp sp-alrt">Parcial</span></td></tr>
+              <tr><td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">REG-05</span></td><td>Rural / Periurbano</td><td>Zona Rural, Sítios, Comunidades</td><td>0</td><td>14.740</td><td><input style="background:transparent;border:none;color:var(--white);font-size:11px;outline:none;width:140px" value=""></td><td><span class="sp sp-off">Sem UBS</span></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <!-- ── Metas ── -->
+        <div class="cfg-section" id="cfg-metas">
+          <div class="cfg-header"><div><div class="cfg-title">🎯 Metas & Indicadores</div><div class="cfg-subtitle">Parâmetros de desempenho e limiares de alerta do sistema</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="ftitle"><span>🚨</span> Limiares de Alerta (Semáforo)</div>
+          <div class="fgrid fgrid-3">
+            <div class="fg"><label>Ocupação — Alerta Amarelo (%)</label><div class="range-row"><input type="range" min="50" max="90" value="70" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">70%</span></div></div>
+            <div class="fg"><label>Ocupação — Alerta Vermelho (%)</label><div class="range-row"><input type="range" min="70" max="100" value="85" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">85%</span></div></div>
+            <div class="fg"><label>Espera — Alerta (min)</label><div class="range-row"><input type="range" min="10" max="90" value="30" oninput="this.nextElementSibling.textContent=this.value+'min'"><span class="range-val">30min</span></div></div>
+            <div class="fg"><label>Protocolo — Aderência mín. (%)</label><div class="range-row"><input type="range" min="70" max="100" value="90" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">90%</span></div></div>
+            <div class="fg"><label>Absenteísmo — Alerta (%)</label><div class="range-row"><input type="range" min="2" max="15" value="6" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">6%</span></div></div>
+            <div class="fg"><label>Confiança mín. IA (%)</label><div class="range-row"><input type="range" min="60" max="99" value="80" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">80%</span></div></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>📊</span> Indicadores de Monitoramento (PACTUAÇÃO)</div>
+          <div class="fgrid fgrid-2" style="overflow:auto">
+            <div style="overflow:auto;grid-column:1/-1"><table class="tbl"><thead><tr><th>Indicador</th><th>Meta</th><th>Período</th><th>Fonte</th><th>Alerta se abaixo</th></tr></thead>
+            <tbody>
+              <tr><td>Cobertura vacinal infantil</td><td><input style="background:transparent;border:none;color:var(--cyan);font-family:var(--fm);font-size:11px;width:60px" value="95%"></td><td>Mensal</td><td>SI-PNI</td><td>90%</td></tr>
+              <tr><td>Razão médicos/mil hab.</td><td><input style="background:transparent;border:none;color:var(--cyan);font-family:var(--fm);font-size:11px;width:60px" value="2,5"></td><td>Anual</td><td>CNES</td><td>2,0</td></tr>
+              <tr><td>Consultas APS/hab./ano</td><td><input style="background:transparent;border:none;color:var(--cyan);font-family:var(--fm);font-size:11px;width:60px" value="3,0"></td><td>Anual</td><td>SISAB</td><td>2,5</td></tr>
+              <tr><td>Taxa internação evitável</td><td><input style="background:transparent;border:none;color:var(--cyan);font-family:var(--fm);font-size:11px;width:60px" value="8%"></td><td>Mensal</td><td>SIH</td><td>12%</td></tr>
+              <tr><td>Notificações SINAN prazo</td><td><input style="background:transparent;border:none;color:var(--cyan);font-family:var(--fm);font-size:11px;width:60px" value="100%"></td><td>Semanal</td><td>SINAN</td><td>95%</td></tr>
+            </tbody></table></div>
+          </div>
+        </div>
+
+        <!-- ── RNDS ── -->
+        <div class="cfg-section" id="cfg-rnds">
+          <div class="cfg-header"><div><div class="cfg-title">🌐 RNDS / e-SUS APS</div><div class="cfg-subtitle">Rede Nacional de Dados em Saúde — Integração FHIR R4 via certificado ICP-Brasil</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" id="rnds-test" onclick="testConn(this,'RNDS')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-top"><div class="api-ico" style="background:rgba(0,200,255,.1)">🌐</div><div class="api-info"><div class="api-name">Rede Nacional de Dados em Saúde (RNDS)</div><div class="api-desc">FHIR R4 · OAuth 2.0 · Certificado ICP-Brasil A1/A3</div></div><div class="api-status"><div class="api-status-dot" style="background:var(--teal)"></div>Ambiente de Produção</div></div>
+            <div class="api-fields">
+              <div class="fg"><label>Ambiente</label><select><option>Homologação (HMG)</option><option selected>Produção (PRD)</option></select></div>
+              <div class="fg"><label>Endpoint Base URL</label><input value="https://ehr.saude.gov.br/fhir/r4"></div>
+              <div class="fg"><label>Client ID (e-Gestor)</label><input value="rnds-client-pmnl-2024" type="password"></div>
+              <div class="fg"><label>Token RNDS (JWT)</label><input type="password" value="eyJhbGciOiJSUzI1NiIs..." placeholder="JWT Bearer Token"></div>
+              <div class="fg api-full"><label>Identificador do Solicitante (CNES)</label><input value="2338075"></div>
+              <div class="fg"><label>Certificado Digital (.pfx)</label><div class="upload-zone" onclick=""><span style="font-size:20px">🔏</span><p>Clique para carregar certificado A1 (.pfx / .p12)<br><span style="color:var(--amber);font-size:9px">Válido até 15/06/2026</span></p></div></div>
+              <div class="fg"><label>Senha do Certificado</label><input type="password" placeholder="••••••••"></div>
+              <div class="fg"><label>Frequência de Sync</label><select><option>Tempo real (WebSocket)</option><option selected>A cada 5 min</option><option>A cada 15 min</option><option>Horário</option></select></div>
+              <div class="fg"><label>Timeout de Requisição (ms)</label><input value="5000"></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>📦</span> Recursos FHIR Habilitados</div>
+          <div class="fgrid fgrid-2">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Patient (Paciente)</div><div class="tog-desc">Cadastro e identificação via CNS/CPF</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Observation (Atendimento)</div><div class="tog-desc">Registros clínicos e triagem</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Immunization (Vacinação)</div><div class="tog-desc">SI-PNI integrado via RNDS</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Composition (Sumário de Alta)</div><div class="tog-desc">Sumário de alta hospitalar padronizado</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">MedicationRequest (Prescrição)</div><div class="tog-desc">Prescrições digitais e REME</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">AllergyIntolerance</div><div class="tog-desc">Alergias e intolerâncias do paciente</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── CNES ── -->
+        <div class="cfg-section" id="cfg-cnes">
+          <div class="cfg-header"><div><div class="cfg-title">🏥 CNES / DATASUS</div><div class="cfg-subtitle">Cadastro Nacional de Estabelecimentos de Saúde — sincronização de unidades e profissionais</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'CNES')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>CNES Matriz do Município</label><input value="2338075"></div>
+              <div class="fg"><label>CNPJ da Entidade Gestora</label><input value="18.715.540/0001-33"></div>
+              <div class="fg"><label>URL API CNES (DATASUS)</label><input value="https://apidatasus.saude.gov.br/cnes/v1"></div>
+              <div class="fg"><label>Token de Acesso DATASUS</label><input type="password" value="dat-2024-cnes-pmnl..."></div>
+              <div class="fg"><label>Sincronização automática</label><select><option>Diária (00:00)</option><option selected>Semanal (Dom 02:00)</option><option>Quinzenal</option><option>Manual</option></select></div>
+              <div class="fg"><label>Última sincronização</label><input value="14/03/2026 02:00 · 142 registros" readonly style="color:var(--teal)"></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>🔄</span> Dados Sincronizados do CNES</div>
+          <div class="fgrid fgrid-2">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Estabelecimentos de Saúde</div><div class="tog-desc">Cadastro de unidades, leitos e serviços</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Profissionais de Saúde</div><div class="tog-desc">CRM, CRN, COREN e CBO atualizado</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Equipes de Saúde (INE)</div><div class="tog-desc">eSF, eAP, NASF e equipes especializadas</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Habilitações e Serviços</div><div class="tog-desc">Serviços especializados habilitados por unidade</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── SINAN ── -->
+        <div class="cfg-section" id="cfg-sinan">
+          <div class="cfg-header"><div><div class="cfg-title">🦠 SINAN / Epidemiologia</div><div class="cfg-subtitle">Sistema de Informação de Agravos de Notificação — vigilância epidemiológica</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'SINAN')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>Versão SINAN</label><select><option>SINAN NET (offline)</option><option selected>SINAN Online (dengue/chikungunya)</option><option>SINAN Influenza</option></select></div>
+              <div class="fg"><label>Código da UF no SINAN</label><input value="31"></div>
+              <div class="fg"><label>Código Municipal SINAN</label><input value="310620"></div>
+              <div class="fg"><label>Unidade Notificante Principal (CNES)</label><input value="2338075"></div>
+              <div class="fg"><label>Prazo de notificação compulsória (h)</label><input value="24"></div>
+              <div class="fg"><label>E-mail da Vigilância Epidemiológica</label><input value="vigiepi@pmnl.mg.gov.br"></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>🦠</span> Agravos Monitorados</div>
+          <div class="fgrid fgrid-3">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Dengue / Chikungunya</div><div class="tog-desc">Notificação online em tempo real</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">SRAG / Influenza</div><div class="tog-desc">Síndrome respiratória aguda grave</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">COVID-19</div><div class="tog-desc">Notificação e vigilância ativa</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Tuberculose</div><div class="tog-desc">Acompanhamento de tratamento DOTS</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">IST/HIV/Sífilis</div><div class="tog-desc">Notificação compulsória IST</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Violência Doméstica</div><div class="tog-desc">Notificação de violência interpessoal</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── CAD-SUS ── -->
+        <div class="cfg-section" id="cfg-cadsus">
+          <div class="cfg-header"><div><div class="cfg-title">🪪 CAD-SUS / Cartão SUS</div><div class="cfg-subtitle">Identificação de cidadãos via CNS e integração com base nacional de cadastros</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'CADSUS')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>URL CADSUS Web Service</label><input value="https://servicos.saude.gov.br/cadsus/CadsusWS"></div>
+              <div class="fg"><label>Credencial GOVBR (CPF responsável)</label><input type="password" value="000.000.000-00" placeholder="CPF do administrador municipal"></div>
+              <div class="fg"><label>Modo de busca padrão</label><select><option selected>CPF (prioritário)</option><option>CNS</option><option>Nome + Data Nasc.</option></select></div>
+              <div class="fg"><label>Tolerância de duplicata</label><select><option selected>Bloquear e alertar</option><option>Permitir com aviso</option><option>Mesclagem automática</option></select></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>🔄</span> Sincronização gov.br</div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Login gov.br habilitado</div><div class="tog-desc">Profissionais autenticam com conta gov.br no sistema</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Validação CNS em tempo real</div><div class="tog-desc">Consulta ao CADSUS a cada novo cadastro de paciente</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Alerta de CNS duplicado</div><div class="tog-desc">Notifica gestores quando há duplicidade de cartão SUS</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── SISAB ── -->
+        <div class="cfg-section" id="cfg-sisab">
+          <div class="cfg-header"><div><div class="cfg-title">📊 SISAB / SIAPS</div><div class="cfg-subtitle">Sistema de Informação em Saúde para a Atenção Básica — envio de produção</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'SISAB')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>Versão do Layout LEDI</label><select><option>LEDI v3.1</option><option selected>LEDI v3.2 (atual)</option><option>LEDI v4.0 (beta)</option></select></div>
+              <div class="fg"><label>Código Municipal e-SUS</label><input value="310620"></div>
+              <div class="fg"><label>Centralizador Nacional URL</label><input value="https://centralizer.saude.gov.br/api/lotacao"></div>
+              <div class="fg"><label>Competência atual</label><input value="03/2026"></div>
+              <div class="fg"><label>Horário de transmissão diária</label><input value="02:00"></div>
+              <div class="fg"><label>Horário de processamento</label><input value="00:00 – 06:00"></div>
+              <div class="fg"><label>Modo de instalação</label><select><option>Instalação única</option><option selected>Multimunicipal (hospedado)</option></select></div>
+              <div class="fg"><label>Backup automático</label><select><option>Desabilitado</option><option selected>Diário — 01:00</option><option>Semanal</option></select></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>⚙️</span> Módulos e-SUS APS Ativos</div>
+          <div class="fgrid fgrid-2">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">PEC — Prontuário Eletrônico</div><div class="tog-desc">Módulo principal de atendimento clínico</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">e-SUS Território (ACS)</div><div class="tog-desc">Visitas domiciliares e cadastro territorial</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">e-SUS Vacinação</div><div class="tog-desc">Registro de vacinas fora da unidade</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">e-SUS Atenção Domiciliar</div><div class="tog-desc">Visitas e atendimentos domiciliares</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">e-SUS Gestão (app gestor)</div><div class="tog-desc">Painel de indicadores para gestores municipais</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Relatórios SISAB automáticos</div><div class="tog-desc">Envio mensal ao Ministério da Saúde</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── HÓRUS ── -->
+        <div class="cfg-section" id="cfg-horus">
+          <div class="cfg-header"><div><div class="cfg-title">💊 Hórus / REMUME</div><div class="cfg-subtitle">Sistema nacional de monitoramento do acesso e disponibilidade de medicamentos</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-err" id="horus-test" onclick="testConn(this,'Hórus')">⚠ Config. Pendente</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card" style="border-color:rgba(255,184,48,.2)">
+            <div class="api-fields">
+              <div class="fg"><label>URL Hórus (DATASUS)</label><input value="https://horus.saude.gov.br/api"></div>
+              <div class="fg"><label>CNES da Farmácia Central</label><input value="" placeholder="Obrigatório para habilitação"></div>
+              <div class="fg"><label>Código REME Municipal</label><input value="MG-310620-REME"></div>
+              <div class="fg"><label>Responsável Técnico (CRF)</label><input value="" placeholder="CRF/MG-000000"></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>💊</span> Componentes Monitorados</div>
+          <div class="fgrid fgrid-2">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Componente Básico (CBAF)</div><div class="tog-desc">Medicamentos da atenção básica</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Componente Especializado</div><div class="tog-desc">Medicamentos de alto custo (CEAF)</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Alerta de Estoque Crítico</div><div class="tog-desc">Notificação quando medicamento abaixo do mínimo</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Vencimento Automatico</div><div class="tog-desc">Alertas 30/60/90 dias antes do vencimento</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── RAC ── -->
+        <div class="cfg-section" id="cfg-rac">
+          <div class="cfg-header"><div><div class="cfg-title">📋 RAC / Prontuário Eletrônico</div><div class="cfg-subtitle">Registro de Atendimento Clínico e integração com PEC e-SUS</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'RAC')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>Versão do PEC e-SUS</label><input value="5.3.28" readonly style="color:var(--teal)"></div>
+              <div class="fg"><label>Modo de autenticação</label><select><option selected>gov.br SSO</option><option>Local (usuário/senha)</option></select></div>
+              <div class="fg"><label>HTTPS habilitado</label><select><option selected>Sim (obrigatório RNDS)</option><option>Não</option></select></div>
+              <div class="fg"><label>Servidor de instalação</label><input value="https://esus.pmnl.mg.gov.br"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── API RH ── -->
+        <div class="cfg-section" id="cfg-rh-api">
+          <div class="cfg-header"><div><div class="cfg-title">👥 API RH da Prefeitura</div><div class="cfg-subtitle">Integração com o sistema de Recursos Humanos municipal — escala, ponto e cargos</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'RH')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>URL Base da API RH</label><input value="https://api.pmnl.gov.br/rh/v2"></div>
+              <div class="fg"><label>Tipo de Autenticação</label><select><option selected>OAuth 2.0 Bearer</option><option>API Key</option><option>Basic Auth</option><option>mTLS</option></select></div>
+              <div class="fg"><label>Client ID</label><input type="password" value="sigs-rh-client-2024"></div>
+              <div class="fg"><label>Client Secret</label><input type="password" value="••••••••••••••••"></div>
+              <div class="fg"><label>Token URL</label><input value="https://auth.pmnl.gov.br/oauth/token"></div>
+              <div class="fg"><label>Escopo (Scope)</label><input value="rh:read rh:escala:write rh:ponto:read"></div>
+              <div class="fg"><label>Webhook URL (eventos RH)</label><input value="https://sigs.pmnl.gov.br/webhook/rh"></div>
+              <div class="fg"><label>Frequência de sync</label><select><option selected>Tempo real (WebSocket)</option><option>A cada 5 min</option><option>A cada 15 min</option></select></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>🔄</span> Dados Sincronizados</div>
+          <div class="fgrid fgrid-2">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Cadastro de Funcionários</div><div class="tog-desc">Nome, CPF, CBO, cargo, vínculo</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Registro de Ponto</div><div class="tog-desc">Check-in/out em tempo real por unidade</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Escala de Plantão</div><div class="tog-desc">Grade semanal/mensal de escalas</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Férias & Licenças</div><div class="tog-desc">Calendário de afastamentos automático</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Banco de Horas</div><div class="tog-desc">Saldo de horas por profissional</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Formação Acadêmica</div><div class="tog-desc">Especialidades, residências e títulos</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── Financeiro ── -->
+        <div class="cfg-section" id="cfg-financeiro">
+          <div class="cfg-header"><div><div class="cfg-title">💰 Sistema Financeiro</div><div class="cfg-subtitle">Integração com contabilidade pública, FMS e execução orçamentária</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-err" onclick="testConn(this,'Financeiro')">⚠ Parcial</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>Sistema Contábil Municipal</label><select><option selected>SIAP (Betha)</option><option>PRONIM (NTW)</option><option>ISS.net (Conam)</option><option>GOVBR (Sankhya)</option><option>Outro</option></select></div>
+              <div class="fg"><label>URL da API Financeira</label><input value="" placeholder="https://financeiro.pmnl.gov.br/api"></div>
+              <div class="fg"><label>Fundo Municipal de Saúde (FMS) — CNPJ</label><input value="02.918.451/0001-84"></div>
+              <div class="fg"><label>Código Orçamentário Saúde</label><input value="10.301.0001"></div>
+              <div class="fg"><label>Percentual mín. saúde (LC 141/2012)</label><input value="15%" readonly style="color:var(--amber)"></div>
+              <div class="fg"><label>Dotação orçamentária anual (R$)</label><input value="42.000.000"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Frotas ── -->
+        <div class="cfg-section" id="cfg-frotas">
+          <div class="cfg-header"><div><div class="cfg-title">🚑 Gestão de Frotas</div><div class="cfg-subtitle">Rastreamento de veículos da saúde, manutenção e roteirização</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-err" onclick="testConn(this,'Frotas')">✗ Desconectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card" style="border-color:rgba(255,64,96,.2)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--amber)">⚠️ Este módulo corresponde ao Desafio 1 do HackaSaúde — integração de frotas ainda pendente.</div>
+            <div class="api-fields">
+              <div class="fg"><label>Provedor de Rastreamento</label><select><option selected>— Selecionar —</option><option>Sascar</option><option>Onixsat</option><option>Rastrocar</option><option>API Própria</option></select></div>
+              <div class="fg"><label>URL API de Rastreamento</label><input value="" placeholder="https://api.rastreador.com/v1"></div>
+              <div class="fg"><label>Total de veículos da frota</label><input value="22"></div>
+              <div class="fg"><label>Tipo de alertas de frota</label><select><option>Apenas velocidade</option><option selected>Velocidade + Rota + Manutenção</option></select></div>
+              <div class="fg"><label>API Google Maps (roteirização)</label><input type="password" placeholder="AIza..."></div>
+              <div class="fg"><label>Raio de cobertura (km)</label><input value="50"></div>
+            </div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>🚗</span> Tipos de Veículos</div>
+          <div class="fgrid fgrid-3">
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Ambulâncias UTI</div><div class="tog-desc">Veículos de suporte avançado</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Ambulâncias Básicas</div><div class="tog-desc">Transporte e suporte básico</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+            <div class="tog-row"><div class="tog-info"><div class="tog-label">Veículos Administrativos</div><div class="tog-desc">Carros de gestão e suprimentos</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+          </div>
+        </div>
+
+        <!-- ── Notificações ── -->
+        <div class="cfg-section" id="cfg-notif">
+          <div class="cfg-header"><div><div class="cfg-title">🔔 Canais & Alertas</div><div class="cfg-subtitle">Configuração dos canais de notificação e regras de disparo automático</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="ftitle"><span>📣</span> Canais Ativos</div>
+          <div class="notif-channel"><div class="notif-ico" style="background:rgba(0,200,255,.1)">📱</div><div class="notif-info"><div class="notif-name">SMS via Twilio</div><div class="notif-sub">Profissionais e gestores · +55 (31) ····</div></div><span class="sp sp-act">● Ativo</span></div>
+          <div class="notif-channel"><div class="notif-ico" style="background:rgba(0,255,179,.1)">🖥️</div><div class="notif-info"><div class="notif-name">Notificação no sistema (push web)</div><div class="notif-sub">Dashboard em tempo real</div></div><span class="sp sp-act">● Ativo</span></div>
+          <div class="notif-channel"><div class="notif-ico" style="background:rgba(255,184,48,.1)">📧</div><div class="notif-info"><div class="notif-name">E-mail SMTP</div><div class="notif-sub">Relatórios e alertas críticos</div></div><span class="sp sp-act">● Ativo</span></div>
+          <div class="notif-channel"><div class="notif-ico" style="background:rgba(165,108,255,.1)">💬</div><div class="notif-info"><div class="notif-name">WhatsApp Business API</div><div class="notif-sub">Beta — em configuração</div></div><span class="sp sp-alrt">⚠ Config</span></div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>⚡</span> Regras de Disparo Automático</div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Alerta quando ocupação ≥ 85%</div><div class="tog-desc">Envia SMS + push para gestores da unidade</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Alerta de ausência sem check-in (≥ 2h)</div><div class="tog-desc">Notifica coordenador de RH e supervisor</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Relatório diário às 18h</div><div class="tog-desc">Resumo executivo por e-mail ao secretário</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Alerta de protocolo abaixo de 90%</div><div class="tog-desc">Notifica coordenador de qualidade</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Notificação de nova IA recomendação</div><div class="tog-desc">Push automático quando IA gera insight crítico</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── SMS ── -->
+        <div class="cfg-section" id="cfg-sms">
+          <div class="cfg-header"><div><div class="cfg-title">📱 SMS / Twilio</div><div class="cfg-subtitle">Gateway de mensagens SMS para notificação de profissionais</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'SMS')">● Ativo</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>Provedor</label><select><option selected>Twilio</option><option>Zenvia</option><option>Infobip</option><option>AWS SNS</option><option>Outro</option></select></div>
+              <div class="fg"><label>Account SID</label><input type="password" value="ACxxxxxxxxxxxxxxxx"></div>
+              <div class="fg"><label>Auth Token</label><input type="password" value="••••••••••••••••"></div>
+              <div class="fg"><label>Número remetente</label><input value="+5531900000000"></div>
+              <div class="fg"><label>Limite diário de SMS</label><input value="500"></div>
+              <div class="fg"><label>SMS enviados hoje</label><input value="87" readonly style="color:var(--teal)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Email ── -->
+        <div class="cfg-section" id="cfg-email">
+          <div class="cfg-header"><div><div class="cfg-title">📧 E-mail SMTP</div><div class="cfg-subtitle">Configuração do servidor de e-mail para relatórios e alertas</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn" onclick="testConn(this,'SMTP')">Testar SMTP</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>Host SMTP</label><input value="smtp.gmail.com"></div>
+              <div class="fg"><label>Porta</label><input value="587"></div>
+              <div class="fg"><label>Segurança</label><select><option selected>TLS/STARTTLS</option><option>SSL</option><option>Nenhum</option></select></div>
+              <div class="fg"><label>Usuário (e-mail)</label><input value="sigs@pmnl.mg.gov.br"></div>
+              <div class="fg"><label>Senha</label><input type="password" value="••••••••"></div>
+              <div class="fg"><label>E-mail "De" (display)</label><input value="SIGS — Saúde Nova Lima &lt;sigs@pmnl.mg.gov.br&gt;"></div>
+              <div class="fg api-full"><label>E-mails de cópia fixa (CC)</label><input value="secretario@pmnl.mg.gov.br, ti@pmnl.mg.gov.br"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── WhatsApp ── -->
+        <div class="cfg-section" id="cfg-whatsapp">
+          <div class="cfg-header"><div><div class="cfg-title">💬 WhatsApp Business API</div><div class="cfg-subtitle">Notificações via WhatsApp para profissionais e gestores — funcionalidade beta</div></div>
+          <div style="display:flex;gap:8px"><span class="sp sp-alrt" style="align-self:center">Beta</span><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card" style="border-color:rgba(0,255,179,.12)">
+            <div class="api-fields">
+              <div class="fg"><label>Provedor</label><select><option selected>Meta (WhatsApp Business API)</option><option>Twilio (WhatsApp)</option><option>Zenvia</option></select></div>
+              <div class="fg"><label>Phone Number ID</label><input placeholder="ID do número do WhatsApp Business"></div>
+              <div class="fg"><label>Access Token (Meta)</label><input type="password" placeholder="EAAxxxxxxxxxxxxxxxxx"></div>
+              <div class="fg"><label>Webhook Verify Token</label><input placeholder="Token de verificação do webhook"></div>
+              <div class="fg"><label>Template de remanejo aprovado</label><input value="sigs_remanejo_v1" placeholder="Nome do template Meta aprovado"></div>
+              <div class="fg"><label>Template de alerta crítico</label><input value="sigs_alerta_critico_v1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── IA Params ── -->
+        <div class="cfg-section" id="cfg-ia-params">
+          <div class="cfg-header"><div><div class="cfg-title">🧠 Parâmetros do Motor de IA</div><div class="cfg-subtitle">Ajustes do algoritmo de recomendação e mineração de dados</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Modelo LLM utilizado</label><select><option selected>Claude Sonnet 4 (Anthropic)</option><option>GPT-4o (OpenAI)</option><option>Gemini 1.5 Pro (Google)</option><option>Modelo local (Llama)</option></select></div>
+            <div class="fg"><label>API Key do LLM</label><input type="password" placeholder="sk-ant-..."></div>
+            <div class="fg"><label>Confiança mínima para exibir insight (%)</label><div class="range-row"><input type="range" min="50" max="99" value="80" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">80%</span></div></div>
+            <div class="fg"><label>Frequência de análise preditiva</label><select><option selected>A cada 15 min</option><option>A cada 30 min</option><option>Horária</option></select></div>
+            <div class="fg"><label>Janela de dados históricos</label><select><option>7 dias</option><option selected>30 dias</option><option>90 dias</option><option>12 meses</option></select></div>
+            <div class="fg"><label>Modo de recomendação</label><select><option selected>Assistido (requer aprovação)</option><option>Automático (executa direto)</option><option>Somente análise</option></select></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>⚙️</span> Pesos dos Fatores de Decisão</div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Peso: Ocupação das Unidades</label><div class="range-row"><input type="range" min="0" max="100" value="35" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">35%</span></div></div>
+            <div class="fg"><label>Peso: Tempo de Espera</label><div class="range-row"><input type="range" min="0" max="100" value="25" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">25%</span></div></div>
+            <div class="fg"><label>Peso: Disponibilidade de Equipe</label><div class="range-row"><input type="range" min="0" max="100" value="25" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">25%</span></div></div>
+            <div class="fg"><label>Peso: Histórico de Demanda</label><div class="range-row"><input type="range" min="0" max="100" value="15" oninput="this.nextElementSibling.textContent=this.value+'%'"><span class="range-val">15%</span></div></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>🔒</span> Restrições e Governança IA</div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Exigir confirmação humana para remanejamento</div><div class="tog-desc">Nenhuma ação é executada sem aprovação do gestor</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Log de todas as recomendações</div><div class="tog-desc">Rastreabilidade completa de decisões da IA</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Notificar quando IA discordar do gestor</div><div class="tog-desc">Registra divergências entre IA e decisão humana</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Usuários ── -->
+        <div class="cfg-section" id="cfg-usuarios">
+          <div class="cfg-header"><div><div class="cfg-title">👤 Usuários & Perfis de Acesso</div><div class="cfg-subtitle">Controle de acesso por papel (RBAC) — gerenciamento de permissões por módulo</div></div><button class="test-btn" onclick="cfgSaved(this)">+ Novo Usuário</button></div>
+          <div style="overflow:auto"><table class="tbl">
+            <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th>Último acesso</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody>
+              <tr><td><div class="tname"><div class="tav tv-cy">GM</div>Gestor Municipal</div></td><td style="font-size:10px;color:var(--muted)">gestor@pmnl.mg.gov.br</td><td><span class="sp sp-crit">Admin Master</span></td><td style="font-family:var(--fm);font-size:9px">Agora</td><td><span class="sp sp-act">● Ativo</span></td><td><button class="test-btn btn-sm">Editar</button></td></tr>
+              <tr><td><div class="tname"><div class="tav tv-te">SC</div>Sec. de Saúde</div></td><td style="font-size:10px;color:var(--muted)">secretaria@pmnl.mg.gov.br</td><td><span class="sp sp-info">Gestor Saúde</span></td><td style="font-family:var(--fm);font-size:9px">Hoje 10:22</td><td><span class="sp sp-act">● Ativo</span></td><td><button class="test-btn btn-sm">Editar</button></td></tr>
+              <tr><td><div class="tname"><div class="tav tv-am">TI</div>Analista TI</div></td><td style="font-size:10px;color:var(--muted)">ti@pmnl.mg.gov.br</td><td><span class="sp sp-alrt">Admin Sistema</span></td><td style="font-family:var(--fm);font-size:9px">Hoje 08:15</td><td><span class="sp sp-act">● Ativo</span></td><td><button class="test-btn btn-sm">Editar</button></td></tr>
+              <tr><td><div class="tname"><div class="tav tv-pu">EP</div>Epidemiologista</div></td><td style="font-size:10px;color:var(--muted)">epidemio@pmnl.mg.gov.br</td><td><span class="sp sp-info">Vigilância</span></td><td style="font-family:var(--fm);font-size:9px">Ontem 16:40</td><td><span class="sp sp-act">● Ativo</span></td><td><button class="test-btn btn-sm">Editar</button></td></tr>
+            </tbody>
+          </table></div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>🔑</span> Matriz de Permissões por Perfil</div>
+          <div style="overflow:auto"><table class="tbl"><thead><tr><th>Módulo</th><th>Admin Master</th><th>Gestor Saúde</th><th>Admin Sist.</th><th>Vigilância</th><th>Visualizador</th></tr></thead>
+          <tbody>
+            <tr><td>Dashboard</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--teal)">✓ Leitura</td></tr>
+            <tr><td>RH / Equipes</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--muted)">— Leitura</td><td style="color:var(--muted)">— Nenhum</td><td style="color:var(--muted)">— Nenhum</td></tr>
+            <tr><td>Unidades</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--muted)">— Leitura</td><td style="color:var(--muted)">— Leitura</td><td style="color:var(--muted)">— Leitura</td></tr>
+            <tr><td>Motor IA</td><td style="color:var(--teal)">✓ Executar</td><td style="color:var(--teal)">✓ Aprovar</td><td style="color:var(--muted)">— Leitura</td><td style="color:var(--muted)">— Leitura</td><td style="color:var(--muted)">— Nenhum</td></tr>
+            <tr><td>Configurações</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--muted)">— Leitura</td><td style="color:var(--teal)">✓ Total</td><td style="color:var(--muted)">— Nenhum</td><td style="color:var(--muted)">— Nenhum</td></tr>
+          </tbody></table></div>
+        </div>
+
+        <!-- ── LGPD ── -->
+        <div class="cfg-section" id="cfg-lgpd">
+          <div class="cfg-header"><div><div class="cfg-title">🛡️ LGPD & Privacidade de Dados</div><div class="cfg-subtitle">Conformidade com a Lei Geral de Proteção de Dados — Lei 13.709/2018</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Encarregado de Dados (DPO)</label><input value="" placeholder="Nome do DPO designado"></div>
+            <div class="fg"><label>E-mail do DPO</label><input value="" placeholder="dpo@pmnl.mg.gov.br"></div>
+            <div class="fg"><label>Retenção de dados clínicos</label><select><option>5 anos</option><option selected>10 anos (padrão CFM)</option><option>20 anos</option><option>Indefinido</option></select></div>
+            <div class="fg"><label>Retenção de logs de acesso</label><select><option>6 meses</option><option selected>1 ano</option><option>2 anos</option></select></div>
+          </div>
+          <div class="fsep"></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Anonimização de dados em relatórios externos</div><div class="tog-desc">Dados exportados para BI são anonimizados por padrão</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Consentimento registrado no prontuário</div><div class="tog-desc">Termo de consentimento LGPD assinado digitalmente</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Notificar ANPD em caso de incidente</div><div class="tog-desc">Protocolo automático de notificação à ANPD em até 72h</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Mascarar CPF/CNS em logs</div><div class="tog-desc">Identificadores pessoais ocultados nos registros de sistema</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Certificado ── -->
+        <div class="cfg-section" id="cfg-cert">
+          <div class="cfg-header"><div><div class="cfg-title">🔏 Certificado Digital ICP-Brasil</div><div class="cfg-subtitle">Certificado A1/A3 obrigatório para acesso à RNDS e assinatura digital</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="cert-box">
+            <div class="cert-status">🔏 Certificado A1 carregado — <span style="color:var(--amber)">Vence em: 15/06/2026 (90 dias)</span></div>
+            <div class="fgrid fgrid-2">
+              <div class="fg"><label>Tipo do Certificado</label><select><option selected>A1 (arquivo .pfx)</option><option>A3 (token/cartão)</option></select></div>
+              <div class="fg"><label>CNPJ no Certificado</label><input value="18.715.540/0001-33" readonly style="color:var(--teal)"></div>
+              <div class="fg"><label>Emitido por</label><input value="Serpro — AC Saúde v2" readonly style="color:var(--muted)"></div>
+              <div class="fg"><label>Validade</label><input value="15/06/2026" readonly style="color:var(--amber)"></div>
+            </div>
+            <div style="margin-top:12px">
+              <div class="upload-zone"><span style="font-size:22px">🔏</span><p>Arraste ou clique para substituir o certificado (.pfx / .p12)<br><span style="color:var(--muted);font-size:9px">Máx. 5MB · Cadeia ICP-Brasil obrigatória</span></p></div>
+            </div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>⚙️</span> Configurações de Assinatura Digital</div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Assinar digitalmente prescrições</div><div class="tog-desc">Prescrições médicas assinadas pelo certificado do profissional</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Assinar transmissões ao SISAB</div><div class="tog-desc">Envios mensais assinados digitalmente</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Alerta de vencimento do certificado</div><div class="tog-desc">Notificar DPO/TI 90, 30 e 7 dias antes do vencimento</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Auditoria ── -->
+        <div class="cfg-section" id="cfg-auditoria">
+          <div class="cfg-header"><div><div class="cfg-title">📜 Log de Auditoria</div><div class="cfg-subtitle">Registro imutável de todas as ações realizadas no sistema</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn" onclick="">⬇ Exportar CSV</button><button class="test-btn" onclick="">🔍 Filtrar</button></div></div>
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div class="log-entry"><span class="log-time">16/03 14:32:18</span><span class="log-level ll-ok">AÇÃO</span><span class="log-msg">Gestor Municipal aplicou remanejamento de Dra. Carla → UPA Centro via recomendação IA</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:28:05</span><span class="log-level ll-info">ACESSO</span><span class="log-msg">Usuário gestor@pmnl autenticou via gov.br · IP: 189.xxx.xxx.20</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:15:33</span><span class="log-level ll-warn">ALERTA</span><span class="log-msg">IA gerou recomendação de remanejamento — confiança 94.7% · aguardando aprovação</span></div>
+            <div class="log-entry"><span class="log-time">16/03 13:58:11</span><span class="log-level ll-info">SYNC</span><span class="log-msg">CNES sincronizado com sucesso — 142 profissionais, 6 estabelecimentos atualizados</span></div>
+            <div class="log-entry"><span class="log-time">16/03 12:00:04</span><span class="log-level ll-ok">BACKUP</span><span class="log-msg">Backup automático concluído — 2.3GB · armazenado em /bkp/sigs-20260316-1200.tar.gz</span></div>
+            <div class="log-entry"><span class="log-time">16/03 10:44:22</span><span class="log-level ll-err">ERRO</span><span class="log-msg">Falha na conexão com API Hórus — timeout após 5000ms · tentativa 3/3</span></div>
+            <div class="log-entry"><span class="log-time">16/03 09:31:00</span><span class="log-level ll-info">SYNC</span><span class="log-msg">SINAN transmitido — 3 notificações de dengue enviadas ao estado</span></div>
+            <div class="log-entry"><span class="log-time">16/03 08:02:45</span><span class="log-level ll-ok">INIT</span><span class="log-msg">Sistema SIGS inicializado — 5 APIs conectadas · versão 2.4.1</span></div>
+          </div>
+        </div>
+
+        <!-- ── Geral ── -->
+        <div class="cfg-section" id="cfg-geral">
+          <div class="cfg-header"><div><div class="cfg-title">🖥️ Configurações Gerais do Sistema</div><div class="cfg-subtitle">Aparência, idioma, comportamento e preferências gerais do SIGS</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="ftitle"><span>🎨</span> Identidade Visual</div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Nome do Sistema</label><input value="SIGS — Sistema Inteligente de Gestão da Saúde"></div>
+            <div class="fg"><label>Nome do Município (exibição)</label><input value="Nova Lima — MG"></div>
+            <div class="fg"><label>Versão</label><input value="2.4.1" readonly style="color:var(--teal)"></div>
+            <div class="fg"><label>Idioma Padrão</label><select><option selected>Português (Brasil)</option></select></div>
+          </div>
+          <div class="fg" style="margin-top:10px"><label>Cor Primária do Sistema</label>
+            <div class="color-row" style="margin-top:6px">
+              <div class="color-swatch sw-act" style="background:#00c8ff" onclick="this.parentNode.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sw-act'));this.classList.add('sw-act')"></div>
+              <div class="color-swatch" style="background:#00ffb3" onclick="this.parentNode.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sw-act'));this.classList.add('sw-act')"></div>
+              <div class="color-swatch" style="background:#a56cff" onclick="this.parentNode.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sw-act'));this.classList.add('sw-act')"></div>
+              <div class="color-swatch" style="background:#ff4060" onclick="this.parentNode.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sw-act'));this.classList.add('sw-act')"></div>
+              <div class="color-swatch" style="background:#ffb830" onclick="this.parentNode.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sw-act'));this.classList.add('sw-act')"></div>
+              <div class="color-swatch" style="background:#ff60b0" onclick="this.parentNode.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('sw-act'));this.classList.add('sw-act')"></div>
+            </div>
+          </div>
+          <div class="fsep"></div>
+          <div class="ftitle"><span>⏱️</span> Performance & Comportamento</div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Intervalo de atualização do dashboard (seg)</label><div class="range-row"><input type="range" min="5" max="120" value="30" oninput="this.nextElementSibling.textContent=this.value+'s'"><span class="range-val">30s</span></div></div>
+            <div class="fg"><label>Sessão inativa — logout (min)</label><div class="range-row"><input type="range" min="5" max="120" value="30" oninput="this.nextElementSibling.textContent=this.value+'min'"><span class="range-val">30min</span></div></div>
+          </div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Animações e transições</div><div class="tog-desc">Desabilitar para melhorar performance em hardware antigo</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Modo de alto contraste</div><div class="tog-desc">Acessibilidade — contraste elevado para daltônicos</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Modo kiosk (tela cheia)</div><div class="tog-desc">Para totens e painéis de monitoramento nas unidades</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Backup ── -->
+        <div class="cfg-section" id="cfg-backup">
+          <div class="cfg-header"><div><div class="cfg-title">💾 Backup & Restore</div><div class="cfg-subtitle">Política de backup automático e restauração de dados</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn" onclick="cfgSaved(this)">▶ Backup Agora</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar Config</button></div></div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Frequência de backup</label><select><option>Horário</option><option selected>Diário (01:00)</option><option>Semanal</option></select></div>
+            <div class="fg"><label>Retenção dos backups</label><select><option>7 dias</option><option selected>30 dias</option><option>90 dias</option><option>1 ano</option></select></div>
+            <div class="fg"><label>Destino do backup</label><select><option selected>Local + Nuvem (S3)</option><option>Apenas local</option><option>Apenas nuvem</option></select></div>
+            <div class="fg"><label>Criptografia dos backups</label><select><option selected>AES-256 (obrigatório)</option><option>Sem criptografia</option></select></div>
+            <div class="fg"><label>Último backup</label><input value="16/03/2026 01:00 · 2.3GB · ✓ OK" readonly style="color:var(--teal)"></div>
+            <div class="fg"><label>Próximo backup</label><input value="17/03/2026 01:00" readonly style="color:var(--muted)"></div>
+          </div>
+          <div class="tog-row" style="margin-top:12px"><div class="tog-info"><div class="tog-label">Backup incremental (apenas diferenças)</div><div class="tog-desc">Reduz tamanho do backup em até 80%</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Teste automático de restore mensal</div><div class="tog-desc">Validação de integridade do backup todo dia 1º</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Performance ── -->
+        <div class="cfg-section" id="cfg-performance">
+          <div class="cfg-header"><div><div class="cfg-title">📈 Performance & Saúde do Sistema</div><div class="cfg-subtitle">Monitoramento de recursos do servidor e latência das integrações</div></div>
+          <button class="test-btn" onclick="refreshHealth()">🔄 Atualizar</button></div>
+          <div class="health-grid" id="healthGrid">
+            <div class="health-item"><div class="health-ico">🖥️</div><div class="health-val" style="color:var(--teal)">23%</div><div class="health-lbl">CPU</div></div>
+            <div class="health-item"><div class="health-ico">💾</div><div class="health-val" style="color:var(--cyan)">4.2GB</div><div class="health-lbl">RAM Usada</div></div>
+            <div class="health-item"><div class="health-ico">💿</div><div class="health-val" style="color:var(--teal)">38%</div><div class="health-lbl">Disco</div></div>
+            <div class="health-item"><div class="health-ico">🌐</div><div class="health-val" style="color:var(--teal)">42ms</div><div class="health-lbl">Latência RNDS</div></div>
+            <div class="health-item"><div class="health-ico">👥</div><div class="health-val" style="color:var(--cyan)">8ms</div><div class="health-lbl">Latência RH API</div></div>
+            <div class="health-item"><div class="health-ico">🔗</div><div class="health-val" style="color:var(--amber)">180ms</div><div class="health-lbl">Latência Hórus</div></div>
+          </div>
+          <div class="fgrid fgrid-2" style="margin-top:12px">
+            <div class="fg"><label>Máx. usuários simultâneos suportados</label><input value="500" readonly style="color:var(--teal)"></div>
+            <div class="fg"><label>Usuários ativos agora</label><input value="8" readonly style="color:var(--cyan)"></div>
+            <div class="fg"><label>Uptime do sistema</label><input value="99.7% nos últimos 30 dias" readonly style="color:var(--teal)"></div>
+            <div class="fg"><label>Versão do banco de dados</label><input value="PostgreSQL 16.2" readonly style="color:var(--muted)"></div>
+          </div>
+        </div>
+
+        <!-- ── Logs ── -->
+        <div class="cfg-section" id="cfg-logs">
+          <div class="cfg-header"><div><div class="cfg-title">📋 Logs do Sistema</div><div class="cfg-subtitle">Registros técnicos de operação — integrações, erros e eventos</div></div>
+          <div style="display:flex;gap:8px">
+            <select style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:7px;padding:5px 10px;color:var(--white);font-family:var(--fm);font-size:10px;outline:none">
+              <option selected>Todos os níveis</option><option>INFO</option><option>WARN</option><option>ERROR</option><option>OK</option>
+            </select>
+            <button class="test-btn" onclick="">⬇ Exportar</button>
+          </div></div>
+          <div style="display:flex;flex-direction:column;gap:0;max-height:440px;overflow-y:auto" id="sysLogs">
+            <div class="log-entry"><span class="log-time">16/03 14:35:00</span><span class="log-level ll-info">INFO</span><span class="log-msg">[FEED] Nova mensagem inserida no feed de integração — origem: RH_API</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:34:55</span><span class="log-level ll-ok">SYNC</span><span class="log-msg">[RH] Profissional Dr. Paulo — check-in registrado UPA Centro 07:02h</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:34:50</span><span class="log-level ll-warn">WARN</span><span class="log-msg">[OCC] UPA Centro ultrapassou 90% de ocupação — alerta disparado via SMS</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:30:12</span><span class="log-level ll-info">INFO</span><span class="log-msg">[RNDS] Enviado Patient bundle — 14 registros · resposta 200 OK · 42ms</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:25:00</span><span class="log-level ll-ok">IA</span><span class="log-msg">[IA] Análise preditiva concluída — cenário: Crise UPA · confiança 94.7% · recomendação gerada</span></div>
+            <div class="log-entry"><span class="log-time">16/03 14:15:33</span><span class="log-level ll-info">INFO</span><span class="log-msg">[SISAB] Transmissão diária agendada para 02:00 · competência 03/2026</span></div>
+            <div class="log-entry"><span class="log-time">16/03 13:58:11</span><span class="log-level ll-ok">SYNC</span><span class="log-msg">[CNES] Sincronização semanal — 142 profissionais, 6 unidades · 0 erros</span></div>
+            <div class="log-entry"><span class="log-time">16/03 12:14:02</span><span class="log-level ll-err">ERROR</span><span class="log-msg">[HORUS] Connection timeout — endpoint: https://horus.saude.gov.br/api · retrying in 30s</span></div>
+            <div class="log-entry"><span class="log-time">16/03 10:00:00</span><span class="log-level ll-info">INFO</span><span class="log-msg">[SINAN] 3 notificações de dengue transmitidas ao estado — protocolo SINAN online v3.0</span></div>
+            <div class="log-entry"><span class="log-time">16/03 08:02:45</span><span class="log-level ll-ok">INIT</span><span class="log-msg">[SIGS] Sistema inicializado — 5/6 APIs conectadas · cert. digital válido · PostgreSQL OK</span></div>
+          </div>
+        </div>
+
+        <!-- ── Mineração ── -->
+        <div class="cfg-section" id="cfg-mineracao">
+          <div class="cfg-header"><div><div class="cfg-title">⛏️ Mineração de Dados</div><div class="cfg-subtitle">Configuração dos pipelines de ETL e fontes de dados para análise</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Frequência do pipeline ETL</label><select><option selected>A cada 15 min</option><option>A cada 30 min</option><option>Horário</option></select></div>
+            <div class="fg"><label>Data warehouse destino</label><select><option selected>PostgreSQL local</option><option>BigQuery (GCP)</option><option>Redshift (AWS)</option><option>Snowflake</option></select></div>
+            <div class="fg"><label>Retenção de dados brutos</label><select><option>90 dias</option><option selected>1 ano</option><option>5 anos</option></select></div>
+            <div class="fg"><label>Ferramenta de BI</label><select><option selected>Dashboard SIGS nativo</option><option>Power BI Embedded</option><option>Metabase</option><option>Grafana</option></select></div>
+          </div>
+          <div class="ftitle" style="margin-top:14px"><span>📥</span> Fontes de Dados Ativas</div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">API RH — escala e ponto</div><div class="tog-desc">Alimenta indicadores de absenteísmo e alocação</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">SISAB — produção APS</div><div class="tog-desc">Atendimentos, procedimentos e diagnósticos CID-10</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">SINAN — vigilância epidemiológica</div><div class="tog-desc">Surtos, notificações compulsórias e agravos</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">CNES — estrutura das unidades</div><div class="tog-desc">Leitos, serviços, equipes e habilitações</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">IBGE — dados populacionais</div><div class="tog-desc">Estimativas populacionais e indicadores socioeconômicos</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Alertas IA ── -->
+        <div class="cfg-section" id="cfg-alertas-ai">
+          <div class="cfg-header"><div><div class="cfg-title">⚡ Regras de Alertas Automáticos</div><div class="cfg-subtitle">Defina condições para disparo automático de alertas e recomendações da IA</div></div><button class="test-btn" onclick="cfgSaved(this)">+ Nova Regra</button></div>
+          <div style="overflow:auto"><table class="tbl">
+            <thead><tr><th>Regra</th><th>Condição</th><th>Ação</th><th>Canais</th><th>Ativa</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:500">Lotação Crítica UPA</td><td style="font-family:var(--fm);font-size:9px;color:var(--red)">Ocupação ≥ 85%</td><td style="font-size:10px">Recomendar remanejamento IA</td><td style="font-size:10px">SMS + Push + E-mail</td><td><label class="tog" style="display:inline-flex"><input type="checkbox" checked><div class="tog-track"></div></label></td></tr>
+              <tr><td style="font-weight:500">Espera Elevada</td><td style="font-family:var(--fm);font-size:9px;color:var(--amber)">Espera ≥ 30min</td><td style="font-size:10px">Alerta ao gestor da unidade</td><td style="font-size:10px">Push + SMS</td><td><label class="tog" style="display:inline-flex"><input type="checkbox" checked><div class="tog-track"></div></label></td></tr>
+              <tr><td style="font-weight:500">Ausência sem Check-in</td><td style="font-family:var(--fm);font-size:9px;color:var(--amber)">Sem check-in ≥ 2h</td><td style="font-size:10px">Notificar RH e supervisor</td><td style="font-size:10px">SMS + E-mail</td><td><label class="tog" style="display:inline-flex"><input type="checkbox" checked><div class="tog-track"></div></label></td></tr>
+              <tr><td style="font-weight:500">Surto Detectado</td><td style="font-family:var(--fm);font-size:9px;color:var(--red)">SINAN ≥ 3 casos/24h</td><td style="font-size:10px">Acionar Protocolo Epidemiológico</td><td style="font-size:10px">SMS + Push + WhatsApp</td><td><label class="tog" style="display:inline-flex"><input type="checkbox" checked><div class="tog-track"></div></label></td></tr>
+              <tr><td style="font-weight:500">Protocolo Abaixo Meta</td><td style="font-family:var(--fm);font-size:9px;color:var(--amber)">Aderência &lt; 90%</td><td style="font-size:10px">Notificar coord. de qualidade</td><td style="font-size:10px">E-mail</td><td><label class="tog" style="display:inline-flex"><input type="checkbox"><div class="tog-track"></div></label></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <!-- ── Preditivo ── -->
+        <div class="cfg-section" id="cfg-preditivo">
+          <div class="cfg-header"><div><div class="cfg-title">🔮 Modelo Preditivo de Demanda</div><div class="cfg-subtitle">Parâmetros do modelo de forecasting para antecipação de fluxo</div></div><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div>
+          <div class="fgrid fgrid-2">
+            <div class="fg"><label>Algoritmo de previsão</label><select><option selected>Prophet (Meta) — Séries Temporais</option><option>ARIMA / SARIMA</option><option>XGBoost</option><option>LSTM (Deep Learning)</option></select></div>
+            <div class="fg"><label>Horizonte de previsão</label><select><option>2 horas</option><option selected>6 horas</option><option>24 horas</option><option>7 dias</option></select></div>
+            <div class="fg"><label>Variáveis externas consideradas</label><select><option selected>Clima + Calendário + Epidemio.</option><option>Apenas histórico</option><option>Calendário escolar</option></select></div>
+            <div class="fg"><label>Retreino do modelo</label><select><option selected>Semanal (dom 03:00)</option><option>Mensal</option><option>Manual</option></select></div>
+          </div>
+          <div class="tog-row" style="margin-top:12px"><div class="tog-info"><div class="tog-label">Considerar feriados e eventos locais</div><div class="tog-desc">Inclui feriados nacionais, municipais e eventos (carnaval, festas)</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Integrar dados de clima (INMET)</div><div class="tog-desc">Temperatura e chuva influenciam demanda de urgência</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+          <div class="tog-row"><div class="tog-info"><div class="tog-label">Alertas preditivos antecipados (6h)</div><div class="tog-desc">Sistema alerta gestores sobre pico previsto com 6h de antecedência</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div></label></div>
+        </div>
+
+        <!-- ── Protocolo API ── -->
+        <div class="cfg-section" id="cfg-protocolo-api">
+          <div class="cfg-header"><div><div class="cfg-title">📝 API de Protocolos</div><div class="cfg-subtitle">Gestão e sincronização dos protocolos assistenciais cadastrados</div></div>
+          <div style="display:flex;gap:8px"><button class="test-btn test-ok" onclick="testConn(this,'Protocolos')">● Conectado</button><button class="test-btn" onclick="cfgSaved(this)">💾 Salvar</button></div></div>
+          <div class="api-card">
+            <div class="api-fields">
+              <div class="fg"><label>URL da API de Protocolos</label><input value="https://api.pmnl.gov.br/protocolos/v1"></div>
+              <div class="fg"><label>Fonte de referência</label><select><option selected>CFM / Ministério da Saúde</option><option>CRM-MG</option><option>Customizado municipal</option></select></div>
+              <div class="fg"><label>Atualização de protocolos</label><select><option selected>Verificar mensalmente</option><option>Semanal</option><option>Manual</option></select></div>
+              <div class="fg"><label>Alerta de protocolo desatualizado</label><select><option selected>Sim — notificar coord. qualidade</option><option>Não</option></select></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /cfg-content -->
+    </div><!-- /view-config -->
+
+  </div><!-- /content -->
+</main>
+
+<!-- MODALS -->
+<div class="moverlay" id="m-action"><div class="modal">
+  <div class="mtitle">⚡ Aplicar Redistribuição</div>
+  <div class="msub">O Motor de IA identificou o plano ótimo. Ações serão executadas:</div>
+  <div class="msteps">
+    <div class="mstep"><div class="snum">1</div><div><div style="font-weight:500">Dra. Carla → UPA Centro</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Notificação SMS + atualização RH</div></div></div>
+    <div class="mstep"><div class="snum">2</div><div><div style="font-weight:500">Enf. Rafael → UPA Centro</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Escala ajustada automaticamente</div></div></div>
+    <div class="mstep"><div class="snum">3</div><div><div style="font-weight:500">Dashboard sincronizado em tempo real</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Todos os gestores notificados</div></div></div>
+  </div>
+  <div class="macts"><button class="btn btn-g" onclick="closeModal('m-action')">Cancelar</button><button class="btn btn-p" onclick="confirmAction()">Confirmar ⚡</button></div>
+</div></div>
+
+<div class="moverlay" id="m-success"><div class="modal" style="text-align:center">
+  <div style="font-size:40px;margin-bottom:10px">✅</div>
+  <div class="mtitle" style="text-align:center">Ação Executada!</div>
+  <div class="msub" style="text-align:center">Profissionais notificados via SMS. RH atualizado. Previsão de redução: <strong style="color:var(--teal)">~25 min</strong> na espera.</div>
+  <div style="background:rgba(0,255,179,.05);border:1px solid rgba(0,255,179,.15);border-radius:9px;padding:11px;margin:14px 0;font-family:var(--fm);font-size:10px;color:var(--muted);text-align:left;line-height:1.8">
+    ✓ RH API · atualizado<br>✓ SMS enviados · 2 profissionais<br>✓ Dashboard · sincronizando<br>✓ Log de protocolo · registrado
+  </div>
+  <button class="btn btn-p" style="width:100%;justify-content:center" onclick="closeModal('m-success')">Continuar Monitorando</button>
+</div></div>
+
+<div class="moverlay" id="m-alerts"><div class="modal">
+  <div class="mtitle">🔔 Central de Alertas</div>
+  <div class="msub">3 alertas ativos gerados pela mineração de dados</div>
+  <div class="msteps">
+    <div class="mstep" style="border-color:rgba(255,64,96,.2)"><div class="snum" style="background:rgba(255,64,96,.15);color:var(--red)">!</div><div><div style="font-weight:500;color:var(--red)">UPA Centro — Lotação 92% (CRÍTICO)</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Risco de ruptura em 45min. IA recomenda remanejamento imediato.</div></div></div>
+    <div class="mstep" style="border-color:rgba(255,184,48,.2)"><div class="snum" style="background:rgba(255,184,48,.15);color:var(--amber)">!</div><div><div style="font-weight:500;color:var(--amber)">Pediatria UBS Sul — Demanda +42%</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Pico identificado por análise preditiva. Considere reforço.</div></div></div>
+    <div class="mstep" style="border-color:rgba(255,184,48,.2)"><div class="snum" style="background:rgba(255,184,48,.15);color:var(--amber)">!</div><div><div style="font-weight:500;color:var(--amber)">3 Profissionais sem check-in</div><div style="font-size:10px;color:var(--muted);margin-top:2px">RH API detectou ausência às 08h. Verificação iniciada.</div></div></div>
+  </div>
+  <div class="macts"><button class="btn btn-g" onclick="closeModal('m-alerts')">Fechar</button><button class="btn btn-p" onclick="closeModal('m-alerts');openModal('action')">Tratar Crítico ⚡</button></div>
+</div></div>
+
+<div class="moverlay" id="m-newFunc"><div class="modal">
+  <div class="mtitle">+ Novo Profissional</div>
+  <div class="msub">Preencha os dados para cadastrar no sistema de RH</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <input style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none" placeholder="Nome completo">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <input style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none" placeholder="CPF">
+      <input style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none" placeholder="CRM / CRN / COREN">
+    </div>
+    <select style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none">
+      <option>Clínico Geral</option><option>Enfermeiro(a)</option><option>Pediatra</option><option>Emergência</option>
+    </select>
+    <select style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none">
+      <option>UPA Centro</option><option>UBS Jardim Sul</option><option>Hospital Geral</option><option>PA Norte</option>
+    </select>
+  </div>
+  <div class="macts"><button class="btn btn-g" onclick="closeModal('m-newFunc')">Cancelar</button><button class="btn btn-p">Cadastrar no RH ✓</button></div>
+</div></div>
+
+<div class="moverlay" id="m-newUnit"><div class="modal">
+  <div class="mtitle">+ Nova Unidade de Saúde</div>
+  <div class="msub">Preencha os dados para cadastrar a unidade no sistema</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <input style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none" placeholder="Nome da unidade">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <select style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none"><option>UPA</option><option>UBS</option><option>Hospital</option><option>PA</option><option>CAPS</option></select>
+      <input style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none" placeholder="Nº de leitos">
+    </div>
+    <input style="background:rgba(0,200,255,.05);border:1px solid var(--pb);border-radius:8px;padding:9px 12px;color:var(--white);font-family:var(--fb);font-size:12px;outline:none" placeholder="Endereço completo">
+  </div>
+  <div class="macts"><button class="btn btn-g" onclick="closeModal('m-newUnit')">Cancelar</button><button class="btn btn-p">Cadastrar Unidade ✓</button></div>
+</div></div>
+
+<div class="moverlay" id="m-apiDetail"><div class="modal">
+  <div class="mtitle">👥 API de RH · Detalhes</div>
+  <div class="msub">Integração com o sistema de Recursos Humanos da Prefeitura</div>
+  <div style="display:flex;flex-direction:column;gap:8px;font-family:var(--fm);font-size:11px;color:var(--muted)">
+    <div style="background:rgba(0,200,255,.05);padding:10px;border-radius:8px;border:1px solid var(--pb)"><span style="color:var(--cyan)">Endpoint:</span> https://api.pmnl.gov.br/rh/v2/</div>
+    <div style="background:rgba(0,200,255,.05);padding:10px;border-radius:8px;border:1px solid var(--pb)"><span style="color:var(--cyan)">Autenticação:</span> OAuth 2.0 · Bearer Token</div>
+    <div style="background:rgba(0,200,255,.05);padding:10px;border-radius:8px;border:1px solid var(--pb)"><span style="color:var(--cyan)">Frequência sync:</span> Tempo real (WebSocket) + Pull a cada 5min</div>
+    <div style="background:rgba(0,255,179,.05);padding:10px;border-radius:8px;border:1px solid rgba(0,255,179,.15)"><span style="color:var(--teal)">Status:</span> ● Conectada · Último sync: há 23 seg · Latência: 42ms</div>
+  </div>
+  <div class="macts"><button class="btn btn-g" onclick="closeModal('m-apiDetail')">Fechar</button><button class="btn btn-p">Testar Conexão ↗</button></div>
+</div></div>
+
+<script>
+// ─── CLOCK ───
+setInterval(()=>{ document.getElementById('clk').textContent = new Date().toLocaleTimeString('pt-BR') },1000);
+document.getElementById('clk').textContent = new Date().toLocaleTimeString('pt-BR');
+
+// ─── DATA ───
+const TEAM = [
+  {id:'DM',col:'tv-cy',name:'Dr. Marcos Silva',cargo:'Clínico Geral',esp:'Clínica Adulto',unit:'UPA Centro',turno:'07–19h',status:'sp-crit',sl:'⚠ Sobrecarga'},
+  {id:'AC',col:'tv-te',name:'Dra. Carla Mendes',cargo:'Clínico Geral',esp:'Clínica Adulto',unit:'UBS Jardim Sul',turno:'07–19h',status:'sp-alrt',sl:'→ Realocar'},
+  {id:'RF',col:'tv-pu',name:'Enf. Rafael Costa',cargo:'Enfermeiro',esp:'Triagem',unit:'UBS Jardim Sul',turno:'07–19h',status:'sp-alrt',sl:'→ Realocar'},
+  {id:'SL',col:'tv-am',name:'Dra. Lucia Souza',cargo:'Pediatra',esp:'Pediatria',unit:'UBS Norte',turno:'08–18h',status:'sp-act',sl:'● Ativo'},
+  {id:'JP',col:'tv-re',name:'Dr. Paulo Ramos',cargo:'Emergência',esp:'Trauma/Urgência',unit:'UPA Centro',turno:'07–19h',status:'sp-act',sl:'● Ativo'},
+  {id:'MA',col:'tv-pi',name:'Enf. Ana Lima',cargo:'Enfermeira',esp:'UTI/Intensiva',unit:'Hospital Geral',turno:'19–07h',status:'sp-off',sl:'○ Folga'},
+  {id:'TB',col:'tv-cy',name:'Dr. Bruno Alves',cargo:'Psiquiatra',esp:'Saúde Mental',unit:'CAPS Centro',turno:'08–18h',status:'sp-act',sl:'● Ativo'},
+  {id:'CN',col:'tv-te',name:'Nut. Clara Neves',cargo:'Nutricionista',esp:'Nutrição Clínica',unit:'Hospital Geral',turno:'08–17h',status:'sp-act',sl:'● Ativo'},
+  {id:'RM',col:'tv-am',name:'Tec. Rodrigo Matos',cargo:'Técnico Enf.',esp:'Procedimentos',unit:'UPA Centro',turno:'19–07h',status:'sp-act',sl:'● Ativo'},
+  {id:'FO',col:'tv-pu',name:'Dra. Fernanda Oliveira',cargo:'Obstetrícia',esp:'Obstetrícia',unit:'Hospital Geral',turno:'07–19h',status:'sp-act',sl:'● Ativo'},
+  {id:'GS',col:'tv-re',name:'Adm. Gustavo Saraiva',cargo:'Administrativo',esp:'Gestão',unit:'Secretaria Saúde',turno:'08–18h',status:'sp-act',sl:'● Ativo'},
+  {id:'IS',col:'tv-pi',name:'Dra. Isabela Freitas',cargo:'Clínico Geral',esp:'Clínica Adulto',unit:'UBS Centro-Sul',turno:'08–18h',status:'sp-act',sl:'● Ativo'},
+];
+
+const UNIDADES = [
+  {cod:'UNI-001',name:'UPA Centro',tipo:'UPA',end:'Rua das Acácias, 120 – Centro',leitos:45,equipe:28,occ:92,status:'crit'},
+  {cod:'UNI-002',name:'Hospital Municipal Geral',tipo:'Hospital',end:'Av. Brasil, 850 – Bela Vista',leitos:120,equipe:65,occ:74,status:'high'},
+  {cod:'UNI-003',name:'UBS Jardim Sul',tipo:'UBS',end:'Rua das Palmeiras, 300 – Jardim Sul',leitos:0,equipe:14,occ:38,status:'norm'},
+  {cod:'UNI-004',name:'PA Norte',tipo:'PA',end:'Av. Norte, 1200 – Bairro Norte',leitos:8,equipe:10,occ:22,status:'low'},
+  {cod:'UNI-005',name:'UBS Centro-Sul',tipo:'UBS',end:'Rua São João, 45 – Centro-Sul',leitos:0,equipe:12,occ:55,status:'norm'},
+  {cod:'UNI-006',name:'CAPS Centro',tipo:'CAPS',end:'Rua Esperança, 77 – Centro',leitos:0,equipe:8,occ:60,status:'norm'},
+];
+
+const PROTOS = [
+  {id:'P-001',name:'Triagem de Manchester',cat:'Emergência',area:'Emergência',aplicacoes:89,aderencia:97,status:'Ativo',desc:'Protocolo de classificação de risco baseado na escala de Manchester. Classifica pacientes em 5 níveis de urgência: Imediato (vermelho), Muito urgente (laranja), Urgente (amarelo), Pouco urgente (verde) e Não urgente (azul).'},
+  {id:'P-002',name:'Atendimento Pediátrico',cat:'Pediatria',area:'Pediatria',aplicacoes:42,aderencia:91,status:'Ativo',desc:'Protocolo completo para atendimento de pacientes pediátricos (0–12 anos). Inclui triagem, avaliação nutricional, imunização e encaminhamentos.'},
+  {id:'P-003',name:'Hipertensão Arterial',cat:'Clínica Geral',area:'Clínica Geral',aplicacoes:65,aderencia:95,status:'Ativo',desc:'Manejo de hipertensão arterial sistêmica. Inclui diagnóstico, estratificação de risco cardiovascular e protocolos de tratamento farmacológico e não-farmacológico.'},
+  {id:'P-004',name:'Diabetes Mellitus Tipo 2',cat:'Clínica Geral',area:'Clínica Geral',aplicacoes:38,aderencia:93,status:'Ativo',desc:'Protocolo de acompanhamento e controle glicêmico para DM2. Inclui metas terapêuticas, monitoramento HbA1c e orientações dietéticas.'},
+  {id:'P-005',name:'Saúde Mental CAPS',cat:'Saúde Mental',area:'Saúde Mental',aplicacoes:18,aderencia:82,status:'Revisão',desc:'Protocolo de acolhimento e cuidado em saúde mental. Em revisão para atualização conforme diretrizes do Ministério da Saúde 2025.'},
+  {id:'P-006',name:'Pré-Natal de Baixo Risco',cat:'Obstetrícia',area:'Obstetrícia',aplicacoes:22,aderencia:98,status:'Ativo',desc:'Protocolo de acompanhamento pré-natal. Prevê mínimo 6 consultas, exames laboratoriais, ultrassonografias e suplementação vitamínica.'},
+  {id:'P-007',name:'Fratura e Trauma Ortopédico',cat:'Ortopedia',area:'Ortopedia',aplicacoes:15,aderencia:88,status:'Ativo',desc:'Manejo de fraturas e traumas musculoesqueléticos. Inclui triagem, imobilização, analgesia e critérios de encaminhamento cirúrgico.'},
+  {id:'P-008',name:'Dengue e Arboviroses',cat:'Clínica Geral',area:'Clínica Geral',aplicacoes:31,aderencia:96,status:'Ativo',desc:'Protocolo de identificação, classificação de risco e manejo de dengue, zika e chikungunya. Inclui critérios de internação e hidratação.'},
+  {id:'P-009',name:'Saúde do Idoso',cat:'Geriatria',area:'Geriatria',aplicacoes:27,aderencia:90,status:'Ativo',desc:'Avaliação geriátrica multidimensional. Inclui rastreamento de demência, risco de quedas, polifarmácia e suporte familiar.'},
+  {id:'P-010',name:'Nutrição Enteral',cat:'Nutrição',area:'Nutrição',aplicacoes:9,aderencia:94,status:'Ativo',desc:'Protocolo de indicação, prescrição e monitoramento da terapia nutricional enteral para pacientes hospitalizados.'},
+];
+
+// ─── CHARTS ───
+let demandChart, protoChart, donutChart, iaChart, biChart1, biChart2;
+
+const chartDefaults = {
+  color: '#4a7090',
+  plugins: { legend: { display:false }, tooltip: {
+    backgroundColor:'rgba(4,14,28,.95)',
+    borderColor:'rgba(0,200,255,.2)',borderWidth:1,
+    titleColor:'#00c8ff',bodyColor:'#dff0ff',
+    titleFont:{family:'JetBrains Mono',size:10},
+    bodyFont:{family:'DM Sans',size:11}
+  }}
+};
+
+function mkLine(ctx, labels, datasets){
+  return new Chart(ctx, { type:'line', data:{labels, datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:chartDefaults.plugins,
+      scales:{y:{beginAtZero:true,grid:{color:'rgba(0,200,255,.05)'},ticks:{color:'#4a7090',font:{family:'JetBrains Mono',size:9}},border:{color:'transparent'}},
+              x:{grid:{display:false},ticks:{color:'#4a7090',font:{family:'JetBrains Mono',size:9}},border:{color:'rgba(0,200,255,.1)'}}}
+    }
+  });
+}
+
+function initCharts(){
+  demandChart = mkLine(
+    document.getElementById('demandChart').getContext('2d'),
+    ['08:00','09:00','10:00','11:00','12:00','13:00','14:00'],
+    [
+      {label:'UPA Centro',data:[35,52,78,92,88,85,91],borderColor:'#00c8ff',backgroundColor:'rgba(0,200,255,.06)',borderWidth:2.5,tension:.4,fill:true,pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#00c8ff'},
+      {label:'UBS Jardim Sul',data:[20,25,30,32,28,25,22],borderColor:'#00ffb3',backgroundColor:'transparent',borderWidth:2,tension:.4,borderDash:[6,3],pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#00ffb3'},
+      {label:'PA Norte',data:[15,18,20,22,19,16,14],borderColor:'#ffb830',backgroundColor:'transparent',borderWidth:2,tension:.4,borderDash:[3,3],pointRadius:3,pointHoverRadius:5,pointBackgroundColor:'#ffb830'}
+    ]
+  );
+
+  protoChart = new Chart(document.getElementById('protoChart').getContext('2d'), {
+    type:'bar',
+    data:{labels:['Clín. Geral','Pediatria','Emergência','Obstet.','Saúde Mental','Ortopedia'],
+      datasets:[{data:[95,91,88,98,82,88],backgroundColor:['rgba(0,200,255,.7)','rgba(0,255,179,.7)','rgba(255,64,96,.7)','rgba(0,200,255,.5)','rgba(255,184,48,.7)','rgba(165,108,255,.7)'],borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{...chartDefaults.plugins,tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:c=>`Aderência: ${c.raw}%`}}},
+      scales:{y:{min:70,max:100,grid:{color:'rgba(0,200,255,.05)'},ticks:{color:'#4a7090',font:{family:'JetBrains Mono',size:9},callback:v=>v+'%'},border:{color:'transparent'}},
+              x:{grid:{display:false},ticks:{color:'#4a7090',font:{family:'JetBrains Mono',size:9}},border:{color:'rgba(0,200,255,.1)'}}}}
+  });
+
+  donutChart = new Chart(document.getElementById('donutChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['UPA Centro','Hospital Geral','UBS Jardim Sul','PA Norte','UBS Centro-Sul','CAPS'],
+      datasets:[{data:[35,28,15,10,8,4],backgroundColor:['rgba(255,64,96,.8)','rgba(255,184,48,.8)','rgba(0,200,255,.8)','rgba(0,255,179,.8)','rgba(165,108,255,.8)','rgba(255,96,176,.8)'],borderColor:'transparent',borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{...chartDefaults.plugins,
+      legend:{display:true,position:'right',labels:{color:'#4a7090',font:{family:'JetBrains Mono',size:9},boxWidth:10,padding:8}},
+      tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:c=>`${c.label}: ${c.raw}%`}}},
+      cutout:'62%'}
+  });
+
+  iaChart = new Chart(document.getElementById('iaChart').getContext('2d'), {
+    type:'radar',
+    data:{labels:['Ocupação','Equipe','Protocolo','Demanda','Espera','Risco'],
+      datasets:[{data:[92,85,94,88,70,60],borderColor:'#00c8ff',backgroundColor:'rgba(0,200,255,.1)',borderWidth:2,pointBackgroundColor:'#00c8ff',pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:chartDefaults.plugins,
+      scales:{r:{grid:{color:'rgba(0,200,255,.1)'},angleLines:{color:'rgba(0,200,255,.1)'},pointLabels:{color:'#4a7090',font:{family:'JetBrains Mono',size:9}},ticks:{display:false},min:0,max:100}}}
+  });
+
+  biChart1 = mkLine(
+    document.getElementById('biChart1').getContext('2d'),
+    ['Out','Nov','Dez','Jan','Fev','Mar'],
+    [{label:'Atendimentos',data:[28400,29100,30200,31500,30800,32847],borderColor:'#00c8ff',backgroundColor:'rgba(0,200,255,.08)',borderWidth:2.5,tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#00c8ff'}]
+  );
+
+  biChart2 = new Chart(document.getElementById('biChart2').getContext('2d'),{
+    type:'polarArea',
+    data:{labels:['Clín. Geral','Emergência','Pediatria','Obstet.','Ortopedia','Outros'],
+      datasets:[{data:[38,24,18,10,6,4],backgroundColor:['rgba(0,200,255,.6)','rgba(255,64,96,.6)','rgba(0,255,179,.6)','rgba(255,184,48,.6)','rgba(165,108,255,.6)','rgba(255,96,176,.6)']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{...chartDefaults.plugins,legend:{display:true,position:'right',labels:{color:'#4a7090',font:{family:'JetBrains Mono',size:9},boxWidth:10,padding:6}}}}
+  });
+}
+
+// ─── SCENARIOS ───
+const SCENARIOS = [
+  { name:'Normal', color:'cyan',
+    kpis:['22 min','142/150','1.284','3','94.2%'],
+    kd:['d-dn','d-neu','d-up','d-up','d-dn'],
+    kdt:['↓14%','LIVE','↑7%','↑2','↓1.2%'],
+    occ:[{n:'UPA Centro',p:92,cl:'f-crit',tag:'t-crit',tl:'CRÍTICO'},{n:'Hospital Geral',p:74,cl:'f-high',tag:'t-high',tl:'ATENÇÃO'},{n:'UBS Jardim Sul',p:38,cl:'f-norm',tag:'t-norm',tl:'NORMAL'},{n:'PA Norte',p:22,cl:'f-low',tag:'t-low',tl:'OCIOSO'}],
+    demand:[[35,52,78,92,88,85,91],[20,25,30,32,28,25,22],[15,18,20,22,19,16,14]],
+    aiMsg:'Sobrecarga na <strong>UPA Centro</strong> (+38min espera). Ociosidade 31% na <strong>UBS Jardim Sul</strong>. Remanejo de <strong>2 Clínicos + 1 Enfermeiro</strong> reduz espera em ~25min.',
+    aiConf:94.7
+  },
+  { name:'Crise UPA', color:'red',
+    kpis:['58 min','138/150','1.840','5','86.1%'],
+    kd:['d-up','d-up','d-up','d-up','d-dn'],
+    kdt:['↑120%','↑4 hrs','↑43%','↑5','↓8.1%'],
+    occ:[{n:'UPA Centro',p:100,cl:'f-crit',tag:'t-crit',tl:'LOTADA'},{n:'Hospital Geral',p:91,cl:'f-crit',tag:'t-crit',tl:'CRÍTICO'},{n:'UBS Jardim Sul',p:55,cl:'f-norm',tag:'t-norm',tl:'NORMAL'},{n:'PA Norte',p:48,cl:'f-norm',tag:'t-norm',tl:'NORMAL'}],
+    demand:[[60,85,100,100,98,100,100],[30,35,50,58,55,52,48],[20,28,35,40,38,35,30]],
+    aiMsg:'🚨 <strong>ALERTA MÁXIMO:</strong> UPA Centro em colapso operacional. <strong>Desvio imediato</strong> de pacientes ambulatoriais para UBS. Ativar <strong>Protocolo de Contingência P-CRISE-01</strong>.',
+    aiConf:98.3
+  },
+  { name:'Pós Remanejo', color:'teal',
+    kpis:['14 min','148/150','1.210','1','96.8%'],
+    kd:['d-dn','d-dn','d-dn','d-dn','d-up'],
+    kdt:['↓36%','↑6 ativos','↓6%','↓2','↑2.6%'],
+    occ:[{n:'UPA Centro',p:62,cl:'f-norm',tag:'t-norm',tl:'NORMAL'},{n:'Hospital Geral',p:68,cl:'f-high',tag:'t-high',tl:'ATENÇÃO'},{n:'UBS Jardim Sul',p:70,cl:'f-high',tag:'t-high',tl:'ATENÇÃO'},{n:'PA Norte',p:42,cl:'f-norm',tag:'t-norm',tl:'NORMAL'}],
+    demand:[[40,55,65,62,58,55,52],[35,40,48,52,55,58,60],[22,28,32,35,33,30,28]],
+    aiMsg:'✅ <strong>Remanejo aplicado com sucesso.</strong> Distribuição equilibrada entre unidades. Sistema operando dentro dos parâmetros. Monitoramento contínuo ativo.',
+    aiConf:91.2
+  },
+  { name:'Pico Demanda', color:'amber',
+    kpis:['42 min','142/150','2.105','4','89.4%'],
+    kd:['d-up','d-neu','d-up','d-up','d-dn'],
+    kdt:['↑91%','LIVE','↑64%','↑3','↓4.8%'],
+    occ:[{n:'UPA Centro',p:88,cl:'f-crit',tag:'t-crit',tl:'CRÍTICO'},{n:'Hospital Geral',p:85,cl:'f-crit',tag:'t-crit',tl:'CRÍTICO'},{n:'UBS Jardim Sul',p:78,cl:'f-high',tag:'t-high',tl:'ATENÇÃO'},{n:'PA Norte',p:65,cl:'f-high',tag:'t-high',tl:'ATENÇÃO'}],
+    demand:[[55,75,90,88,95,92,88],[38,48,60,65,70,68,62],[28,38,50,55,52,48,44]],
+    aiMsg:'⚠️ <strong>Pico de demanda regional detectado</strong>. Provável surto gripal (+64% casos). IA sugere <strong>abertura de UBS extended-hour</strong> e ativação de <strong>equipe de retaguarda</strong>.',
+    aiConf:87.9
+  },
+  { name:'Plantão Noturno', color:'purple',
+    kpis:['18 min','62/150','285','0','97.5%'],
+    kd:['d-dn','d-dn','d-dn','d-neu','d-up'],
+    kdt:['↓18%','Noturno','Noite','Estável','↑3.3%'],
+    occ:[{n:'UPA Centro',p:45,cl:'f-norm',tag:'t-norm',tl:'NORMAL'},{n:'Hospital Geral',p:52,cl:'f-norm',tag:'t-norm',tl:'NORMAL'},{n:'UBS Jardim Sul',p:0,cl:'f-low',tag:'t-low',tl:'FECHADA'},{n:'PA Norte',p:30,cl:'f-norm',tag:'t-norm',tl:'NORMAL'}],
+    demand:[[20,15,12,10,14,18,22],[0,0,0,0,0,0,0],[12,10,8,6,9,11,14]],
+    aiMsg:'🌙 <strong>Modo plantão noturno ativo</strong>. Equipe reduzida (62 profissionais). UBS Jardim Sul e Centro-Sul fechadas. Escala de emergência coberta. Sistema estável.',
+    aiConf:99.1
+  }
+];
+
+let currentScenario = 0;
+
+function setScenario(i){
+  currentScenario = i;
+  const sc = SCENARIOS[i];
+  // buttons
+  document.querySelectorAll('.sc-btn').forEach((b,j)=>{
+    b.classList.remove('sc-act','sc-red','sc-teal','sc-amber','sc-purple');
+    const colors = ['','sc-red','sc-teal','sc-amber','sc-purple'];
+    if(colors[j]) b.classList.add(colors[j]);
+    if(j===i) b.classList.add('sc-act',colors[j]||'');
+  });
+  // kpis
+  ['k0','k1','k2','k3','k4'].forEach((id,j)=>{
+    const el = document.getElementById(id);
+    const val = sc.kpis[j];
+    // animate value change
+    el.style.opacity='0.3';
+    setTimeout(()=>{
+      if(id==='k0') el.innerHTML = val.replace(' min',`<span style="font-size:13px;color:var(--muted)"> min</span>`);
+      else if(id==='k1') el.innerHTML = val.replace('/150',`<span style="font-size:13px;color:var(--muted)">/150</span>`);
+      else if(id==='k4') el.innerHTML = val.replace('%',`<span style="font-size:13px">%</span>`);
+      else el.textContent = val;
+      el.style.opacity='1';
+      el.style.transition='opacity .3s';
+    },200);
+    const d = document.getElementById(id+'d');
+    d.className='kdelta '+sc.kd[j];
+    d.textContent=sc.kdt[j];
+  });
+  // occ
+  renderOcc(sc.occ);
+  // chart
+  if(demandChart){
+    demandChart.data.datasets[0].data = sc.demand[0];
+    demandChart.data.datasets[1].data = sc.demand[1];
+    demandChart.data.datasets[2].data = sc.demand[2];
+    demandChart.update('active');
+  }
+  // AI
+  document.getElementById('aiMsg').innerHTML = sc.aiMsg;
+  document.getElementById('aiConf').textContent = sc.aiConf;
+  document.getElementById('sc-status').textContent = `Cenário: ${sc.name}`;
+  document.getElementById('aiBanner').style.display='flex';
+  // feed
+  addFeedItem(feedMsgs[Math.floor(Math.random()*feedMsgs.length)]);
+}
+
+function renderOcc(list){
+  const el = document.getElementById('occList');
+  el.innerHTML = list.map(o=>`
+    <div class="occ-i">
+      <div class="occ-h"><span class="occ-n">${o.n}</span><span class="occ-p">${o.p}%</span></div>
+      <div class="occ-track"><div class="occ-fill ${o.cl}" style="width:${o.p}%"></div></div>
+      <span class="occ-tag ${o.tag}">${o.tl}</span>
+    </div>`).join('');
+}
+
+// ─── TEAM TABLE ───
+function renderTeam(){
+  document.getElementById('teamTable').innerHTML = TEAM.slice(0,6).map(t=>`
+    <tr><td><div class="tname"><div class="tav ${t.col}">${t.id}</div>${t.name.split(' ').slice(0,2).join(' ')}</div></td>
+    <td><span style="font-size:10px">${t.cargo}</span></td>
+    <td><span class="sloc">${t.unit}</span></td>
+    <td><span class="sp ${t.status}">${t.sl}</span></td></tr>`).join('');
+}
+
+// ─── RH TABLE ───
+function renderRH(data){
+  document.getElementById('rhBody').innerHTML = (data||TEAM).map((t,i)=>`
+    <tr>
+      <td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">RH-${String(i+1001).padStart(4,'0')}</span></td>
+      <td><div class="tname"><div class="tav ${t.col}">${t.id}</div>${t.name}</div></td>
+      <td>${t.cargo}</td><td><span style="font-size:10px;color:var(--muted)">${t.esp}</span></td>
+      <td><span class="sloc">${t.unit}</span></td>
+      <td><span style="font-family:var(--fm);font-size:9px">${t.turno||'08–18h'}</span></td>
+      <td><span class="sp ${t.status}">${t.sl}</span></td>
+      <td><button class="btn btn-g btn-sm" style="font-size:9px" onclick="openModal('newFunc')">Editar</button></td>
+    </tr>`).join('');
+}
+
+function filterRH(){
+  const q=(document.getElementById('rhSearch').value||'').toLowerCase();
+  const f=document.getElementById('rhFilter').value;
+  const s=document.getElementById('rhStatus').value;
+  renderRH(TEAM.filter(t=>{
+    const matchQ=!q||(t.name.toLowerCase().includes(q)||t.cargo.toLowerCase().includes(q)||t.unit.toLowerCase().includes(q));
+    const matchF=!f||t.cargo.includes(f);
+    const matchS=!s||t.sl.includes(s==='Ativo'?'Ativo':s==='Férias'?'Férias':s==='Folga'?'Folga':s==='Sobrecarga'?'Sobrecarga':'');
+    return matchQ&&matchF&&matchS;
+  }));
+}
+
+// ─── UNIDADES ───
+function renderUnidades(){
+  const fMap={crit:'f-crit',high:'f-high',norm:'f-norm',low:'f-low'};
+  const tMap={crit:'t-crit',high:'t-high',norm:'t-norm',low:'t-low'};
+  const tlMap={crit:'CRÍTICO',high:'ATENÇÃO',norm:'NORMAL',low:'OCIOSO'};
+  const icoMap={UPA:'🚨',Hospital:'🏨',UBS:'🏥',PA:'⛑️',CAPS:'🧠'};
+  const colMap={crit:'uc-crit',high:'uc-high',norm:'uc-norm',low:'uc-low'};
+  document.getElementById('unidadeCards').innerHTML = UNIDADES.map(u=>`
+    <div class="ucard ${colMap[u.status]}" onclick="">
+      <div class="uc-top"><span class="uc-ico">${icoMap[u.tipo]||'🏥'}</span><span class="occ-p">${u.occ}%</span></div>
+      <div class="uc-name">${u.name}</div>
+      <div class="uc-type">${u.tipo} · Nova Lima</div>
+      <div class="uc-bar"><div class="uc-fill occ-fill ${fMap[u.status]}" style="width:${u.occ}%"></div></div>
+      <div class="uc-stats">
+        <div class="uc-stat"><span class="uc-sv">${u.leitos||'—'}</span><span class="uc-sl">leitos</span></div>
+        <div class="uc-stat"><span class="uc-sv">${u.equipe}</span><span class="uc-sl">equipe</span></div>
+        <div class="uc-stat"><span class="uc-sv occ-tag ${tMap[u.status]}" style="font-size:9px">${tlMap[u.status]}</span><span class="uc-sl"> </span></div>
+      </div>
+    </div>`).join('');
+  document.getElementById('unidBody').innerHTML = UNIDADES.map(u=>`
+    <tr>
+      <td><span style="font-family:var(--fm);font-size:9px;color:var(--muted)">${u.cod}</span></td>
+      <td><strong style="font-size:11px">${u.name}</strong></td>
+      <td><span style="font-size:10px">${u.tipo}</span></td>
+      <td><span class="sloc" style="font-size:10px">${u.end}</span></td>
+      <td><span style="font-family:var(--fm);font-size:10px">${u.leitos||'—'}</span></td>
+      <td><span style="font-family:var(--fm);font-size:10px">${u.equipe}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:60px;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+            <div class="occ-fill ${fMap[u.status]}" style="width:${u.occ}%;height:100%"></div>
+          </div>
+          <span style="font-family:var(--fm);font-size:10px">${u.occ}%</span>
+        </div>
+      </td>
+      <td><span class="sp sp-${u.status==='crit'?'crit':u.status==='high'?'alrt':'act'}">${tlMap[u.status]}</span></td>
+    </tr>`).join('');
+}
+
+// ─── PROTOCOLOS ───
+function renderProto(data){
+  const colored={Emergência:'#ff4060',Pediatria:'#00ffb3','Clínica Geral':'#00c8ff',Obstetrícia:'#ffb830','Saúde Mental':'#a56cff',Ortopedia:'#ff60b0',Nutrição:'#00c8ff',Geriatria:'#00ffb3'};
+  document.getElementById('protoList').innerHTML = (data||PROTOS).map(p=>`
+    <div class="pc" onclick="toggleProto(this)">
+      <div class="pc-ico" style="background:${colored[p.area]||'#00c8ff'}20;color:${colored[p.area]||'#00c8ff'}">
+        ${p.area==='Emergência'?'🚨':p.area==='Pediatria'?'👶':p.area==='Obstetrícia'?'🤰':p.area==='Saúde Mental'?'🧠':p.area==='Ortopedia'?'🦴':p.area==='Nutrição'?'🥗':p.area==='Geriatria'?'👴':'📋'}
+      </div>
+      <div class="pc-info">
+        <div class="pc-name">${p.id} · ${p.name}</div>
+        <div class="pc-cat">${p.cat} · ${p.area}</div>
+      </div>
+      <div class="pc-stats">
+        <div class="pc-s"><span class="pc-sv" style="color:${p.aderencia>=90?'#00ffb3':p.aderencia>=80?'#ffb830':'#ff4060'}">${p.aderencia}%</span><span class="pc-sl">aderência</span></div>
+        <div class="pc-s"><span class="pc-sv" style="color:var(--cyan)">${p.aplicacoes}</span><span class="pc-sl">aplicações</span></div>
+        <span class="sp ${p.status==='Ativo'?'sp-act':p.status==='Revisão'?'sp-alrt':'sp-off'}">${p.status}</span>
+      </div>
+      <div class="pc-expand">${p.desc}</div>
+    </div>`).join('');
+}
+
+function toggleProto(el){
+  const exp = el.querySelector('.pc-expand');
+  const isOpen = exp.style.display==='block';
+  document.querySelectorAll('.pc-expand').forEach(e=>e.style.display='none');
+  document.querySelectorAll('.pc').forEach(e=>e.classList.remove('expanded'));
+  if(!isOpen){ exp.style.display='block'; el.classList.add('expanded'); }
+}
+
+function filterProto(){
+  const q=(document.getElementById('protoSearch').value||'').toLowerCase();
+  const f=document.getElementById('protoFilter').value;
+  const s=document.getElementById('protoStatus').value;
+  renderProto(PROTOS.filter(p=>{
+    const mq=!q||(p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q));
+    const mf=!f||p.area===f||p.cat===f;
+    const ms=!s||p.status===s;
+    return mq&&mf&&ms;
+  }));
+}
+
+// ─── IA SCENARIOS ───
+const IA_DATA = [
+  {
+    analysis:'<span style="color:var(--teal)">✅ Sistema operando dentro dos parâmetros normais.</span> A mineração de dados indica distribuição equilibrada entre as unidades. O motor preditivo não identifica riscos imediatos para as próximas 4 horas. Recomenda-se manutenção da escala atual e monitoramento contínuo.',
+    actions:['Manter Escala Atual','Gerar Relatório Diário'],
+    radar:[75,85,94,72,88,45],
+    steps:['Manter monitoramento em tempo real das 6 unidades','Verificar conformidade de protocolos às 15h','Confirmar escala noturna até 17h','Emitir boletim de gestão às 18h']
+  },
+  {
+    analysis:'<span style="color:var(--red)">🚨 SITUAÇÃO CRÍTICA na UPA Centro.</span> Ocupação em 100%, tempo de espera de 58 minutos, risco de colapso operacional em estimados 45 minutos. Análise preditiva indica piora contínua sem intervenção. Protocolo P-CRISE-01 deve ser ativado imediatamente.',
+    actions:['⚡ Acionar P-CRISE-01','Desviar Pacientes','Chamar Equipe Extra'],
+    radar:[100,60,78,95,30,95],
+    steps:['IMEDIATO: Desviar ambulâncias para Hospital Geral e PA Norte','Acionar 4 profissionais em sobreaviso para reforço','Notificar Secretaria de Saúde via protocolo de crise','Abrir leitos extras no corredor da UPA (protocolo de contingência)','Comunicar pacientes em espera via sistema de totem']
+  },
+  {
+    analysis:'<span style="color:var(--amber)">⚠️ Surto endêmico identificado.</span> Dados epidemiológicos integrados com SINAN indicam aumento de 240% nos casos de síndrome gripal nas últimas 72h. Perfil etário: predominância em crianças (0–12) e idosos (60+). Risco de saturação do sistema em 48–72h.',
+    actions:['Ativar Protocolo Dengue','Abrir Leitos Extra','Convocar Epidemio'],
+    radar:[65,70,88,100,58,80],
+    steps:['Ativar Protocolo P-008 (Arboviroses) em todas as unidades','Convocar 2 epidemiologistas para acompanhamento','Criar ponto extra de atendimento no Parque Central','Emitir alerta à população via SMS e redes sociais','Solicitar reposição emergencial de medicamentos à FUNED']
+  },
+  {
+    analysis:'<span style="color:var(--amber)">⚠️ Déficit de pessoal detectado.</span> Absenteísmo hoje: 8% (acima da meta de 6%). 8 profissionais ausentes sem reposição confirmada. Cobertura comprometida especialmente em: Emergência (UPA Centro) e Pediatria (UBS Sul). Motor de IA sugere ativação de banco de horas.',
+    actions:['Acionar Banco de Horas','Notificar RH','Ver Disponíveis'],
+    radar:[60,30,86,72,65,70],
+    steps:['Contatar 5 profissionais com banco de horas positivo','Remanejar 2 técnicos de enfermagem da UBS para UPA','Comunicar Setor de RH para abertura de processo de cobertura','Registrar ocorrência no sistema de gestão de escala','Avaliar abertura de processo seletivo simplificado se padrão persistir']
+  }
+];
+
+let selectedIA = 0;
+function selectIAScenario(i){
+  selectedIA = i;
+  document.querySelectorAll('.sc-card').forEach((c,j)=>{
+    c.classList.toggle('sc-sel',j===i);
+  });
+  const d = IA_DATA[i];
+  document.getElementById('iaAnalysis').innerHTML = d.analysis;
+  document.getElementById('iaActions').innerHTML = d.actions.map((a,j)=>
+    `<button class="btn ${j===0?'btn-p':'btn-g'} btn-sm">${a}</button>`).join('');
+  document.getElementById('iaSteps').innerHTML = d.steps.map((s,j)=>
+    `<div class="mstep"><div class="snum">${j+1}</div><div>${s}</div></div>`).join('');
+  if(iaChart){
+    iaChart.data.datasets[0].data = d.radar;
+    iaChart.update('active');
+  }
+}
+
+// ─── FEED ───
+const feedMsgs = [
+  {msg:'Check-in registrado: Enf. Claudia — UBS Centro-Sul.',type:'rh'},
+  {msg:'Prontuário #452-B finalizado. Paciente encaminhado.',type:'sa'},
+  {msg:'Protocolo P-003 aplicado — hipertensão, 5 casos na hora.',type:'pr'},
+  {msg:'UPA Centro: ocupação subiu para 94%.',type:'al'},
+  {msg:'Escala noturna confirmada — 12 profissionais.',type:'rh'},
+  {msg:'Dr. Paulo iniciou atendimento de emergência #E-0198.',type:'sa'},
+  {msg:'Alta médica processada — leito 14 liberado.',type:'sa'},
+  {msg:'Falta de estoque: dipirona 500mg na UBS Norte.',type:'al'},
+  {msg:'Novo agendamento confirmado — consulta #C-2847.',type:'pr'},
+];
+let feedIdx=0;
+function addFeedItem(item){
+  const list=document.getElementById('feedList');
+  if(!list)return;
+  const d=document.createElement('div');
+  d.className='fi';
+  const ago=['agora','há 1 min','há 2 min'][Math.floor(Math.random()*3)];
+  d.innerHTML=`<div class="fd ${item.type}"></div><div class="fc"><div class="fm2">${item.msg}</div><div class="fmeta">${ago}</div></div><span class="fsrc ${item.type}">${item.type.toUpperCase()}</span>`;
+  list.insertBefore(d,list.firstChild);
+  while(list.children.length>7)list.removeChild(list.lastChild);
+}
+function initFeed(){
+  feedMsgs.forEach(m=>addFeedItem(m));
+}
+setInterval(()=>{ addFeedItem(feedMsgs[feedIdx%feedMsgs.length]); feedIdx++; },4500);
+
+// ─── NAVIGATION ───
+document.querySelectorAll('.nb[data-view]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const v = btn.dataset.view;
+    document.querySelectorAll('.nb').forEach(b=>b.classList.remove('act'));
+    btn.classList.add('act');
+    document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+    document.getElementById('view-'+v).classList.add('active');
+    // lazy init charts for BI
+    if(v==='bi' && !biChart1){
+      setTimeout(initBICharts,100);
+    }
+  });
+});
+
+function initBICharts(){
+  biChart1 = mkLine(
+    document.getElementById('biChart1').getContext('2d'),
+    ['Out','Nov','Dez','Jan','Fev','Mar'],
+    [{data:[28400,29100,30200,31500,30800,32847],borderColor:'#00c8ff',backgroundColor:'rgba(0,200,255,.08)',borderWidth:2.5,tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#00c8ff'}]
+  );
+  biChart2 = new Chart(document.getElementById('biChart2').getContext('2d'),{
+    type:'polarArea',
+    data:{labels:['Clín. Geral','Emergência','Pediatria','Obstet.','Ortopedia','Outros'],
+      datasets:[{data:[38,24,18,10,6,4],backgroundColor:['rgba(0,200,255,.6)','rgba(255,64,96,.6)','rgba(0,255,179,.6)','rgba(255,184,48,.6)','rgba(165,108,255,.6)','rgba(255,96,176,.6)']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{...chartDefaults.plugins,legend:{display:true,position:'right',labels:{color:'#4a7090',font:{family:'JetBrains Mono',size:9},boxWidth:10,padding:6}}}}
+  });
+}
+
+// ─── MODAL ───
+function openModal(type){
+  const map={action:'m-action',alerts:'m-alerts',newFunc:'m-newFunc',newUnit:'m-newUnit',apiDetail:'m-apiDetail'};
+  const id=map[type];
+  if(id)document.getElementById(id).classList.add('open');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function confirmAction(){
+  closeModal('m-action');
+  setTimeout(()=>document.getElementById('m-success').classList.add('open'),200);
+  setScenario(2);
+}
+document.querySelectorAll('.moverlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o)o.classList.remove('open'); });
+});
+
+
+// ─── CONFIG NAVIGATION ───
+function cfgNav(el, sectionId) {
+  // Update sidebar active
+  document.querySelectorAll('.cfg-item').forEach(i => i.classList.remove('cfg-act'));
+  el.classList.add('cfg-act');
+  // Show section
+  document.querySelectorAll('.cfg-section').forEach(s => s.classList.remove('cfg-active'));
+  const sec = document.getElementById(sectionId);
+  if (sec) { sec.classList.add('cfg-active'); sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+
+// Fix config view display when navigated to
+document.querySelectorAll('.nb[data-view]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const v = btn.dataset.view;
+    const cfgView = document.getElementById('view-config');
+    if (v === 'config') {
+      cfgView.style.display = 'flex';
+      cfgView.classList.add('active');
+    } else {
+      cfgView.style.display = 'none';
+      cfgView.classList.remove('active');
+    }
+  });
+});
+
+function testConn(btn, name) {
+  btn.textContent = '⏳ Testando...';
+  btn.className = 'test-btn';
+  setTimeout(() => {
+    const ok = Math.random() > 0.15;
+    btn.textContent = ok ? `● ${name} OK` : `✗ Falha`;
+    btn.className = ok ? 'test-btn test-ok' : 'test-btn test-err';
+    addFeedItem({ msg: ok ? `Teste de conexão ${name}: sucesso · latência ${Math.floor(Math.random()*80+10)}ms` : `Teste de conexão ${name}: FALHOU — verifique credenciais`, type: ok ? 'sa' : 'al' });
+  }, 1200);
+}
+
+function cfgSaved(btn) {
+  const orig = btn.textContent;
+  btn.textContent = '✓ Salvo!';
+  btn.className = 'test-btn test-ok';
+  setTimeout(() => { btn.textContent = orig; btn.className = 'test-btn'; }, 2000);
+  addFeedItem({ msg: `Configurações atualizadas pelo gestor — módulo Configurações`, type: 'pr' });
+}
+
+function refreshHealth() {
+  const vals = [
+    [Math.floor(Math.random()*60+10)+'%', Math.floor(Math.random()*4+2)+'.'+Math.floor(Math.random()*9)+'GB', Math.floor(Math.random()*60+20)+'%'],
+    [Math.floor(Math.random()*80+20)+'ms', Math.floor(Math.random()*20+5)+'ms', Math.floor(Math.random()*300+50)+'ms']
+  ];
+  const items = document.querySelectorAll('#healthGrid .health-val');
+  if (items.length >= 6) {
+    items[0].textContent = vals[0][0];
+    items[1].textContent = vals[0][1];
+    items[2].textContent = vals[0][2];
+    items[3].textContent = vals[1][0];
+    items[4].textContent = vals[1][1];
+    items[5].textContent = vals[1][2];
+  }
+}
+
+
+// ─── INIT ───
+window.addEventListener('DOMContentLoaded',()=>{
+  initCharts();
+  initFeed();
+  renderTeam();
+  renderRH();
+  renderOcc(SCENARIOS[0].occ);
+  renderUnidades();
+  renderProto();
+  selectIAScenario(0);
+});
+</script>
+</body>
+</html>
